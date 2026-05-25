@@ -183,13 +183,34 @@
         return;
       }
 
+      // ตั้งเวลาเผื่อกรณีที่เบราว์เซอร์/LINE บล็อกการขอสิทธิ์แล้วโหลดค้างเงียบๆ
+      // ถ้าเกิน 10 วินาที ให้บังคับหยุดโหลดและแสดงปุ่ม ลากิจ/ลาป่วย
+      let forceTimeout = setTimeout(() => {
+        hideLoading();
+        updateLocationUI(false, "⚠️ ดึงพิกัดไม่สำเร็จ (กรุณาเปิด GPS หรืออนุญาตสิทธิ์ตำแหน่ง)", "danger");
+        toggleActionButtons(false); // บังคับให้แสดงโซนลากิจ/ลาป่วยไปเลย
+      }, 10000); // 10,000 มิลลิวินาที = 10 วินาที
+
       const geoOptionsHigh = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
       
       navigator.geolocation.getCurrentPosition(
-        handleGeoSuccess, 
+        (position) => {
+          clearTimeout(forceTimeout); // ถ้าหาพิกัดเจอ ให้ยกเลิกการนับเวลาตัดจบ
+          handleGeoSuccess(position);
+        }, 
         (err) => {
-          console.warn("High accuracy timed out or failed. Switching to standard fallback location...");
-          navigator.geolocation.getCurrentPosition(handleGeoSuccess, handleGeoError, { enableHighAccuracy: false, timeout: 5000 });
+          console.warn("High accuracy failed. Switching to fallback...");
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              clearTimeout(forceTimeout);
+              handleGeoSuccess(pos);
+            }, 
+            (error) => {
+              clearTimeout(forceTimeout);
+              handleGeoError(error);
+            }, 
+            { enableHighAccuracy: false, timeout: 5000 }
+          );
         }, 
         geoOptionsHigh
       );
