@@ -183,34 +183,49 @@
         return;
       }
 
-      // ตั้งเวลาเผื่อกรณีที่เบราว์เซอร์/LINE บล็อกการขอสิทธิ์แล้วโหลดค้างเงียบๆ
-      // ถ้าเกิน 10 วินาที ให้บังคับหยุดโหลดและแสดงปุ่ม ลากิจ/ลาป่วย
-      let forceTimeout = setTimeout(() => {
-        hideLoading();
-        updateLocationUI(false, "⚠️ ดึงพิกัดไม่สำเร็จ (กรุณาเปิด GPS หรืออนุญาตสิทธิ์ตำแหน่ง)", "danger");
-        toggleActionButtons(false); // บังคับให้แสดงโซนลากิจ/ลาป่วยไปเลย
-      }, 10000); // 10,000 มิลลิวินาที = 10 วินาที
+      let isResolved = false; // ตัวแปรเช็คสถานะป้องกันโค้ดรันตีกัน
 
-      const geoOptionsHigh = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
+      // 🌟 ตั้งเวลาบังคับตัดจบ (8 วินาที) หาก GPS ไม่ตอบสนอง
+      let forceTimeout = setTimeout(() => {
+        if (isResolved) return;
+        isResolved = true; // ล็อกว่าทำงานเสร็จแล้ว
+        hideLoading();
+        updateLocationUI(false, "⚠️ สัญญาณ GPS ขัดข้อง / ไม่ได้เปิดสิทธิ์ตำแหน่ง", "danger");
+        toggleActionButtons(false); // บังคับแสดงปุ่ม ลากิจ/ลาป่วย ทันที!
+      }, 8000); 
+
+      // ดึงพิกัด (ยอมรับแคชพิกัดล่าสุด 10 วินาที เพื่อให้โหลดไวขึ้น)
+      const geoOptionsHigh = { enableHighAccuracy: true, timeout: 4000, maximumAge: 10000 };
       
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          clearTimeout(forceTimeout); // ถ้าหาพิกัดเจอ ให้ยกเลิกการนับเวลาตัดจบ
+          if (isResolved) return;
+          isResolved = true;
+          clearTimeout(forceTimeout); 
           handleGeoSuccess(position);
         }, 
         (err) => {
-          console.warn("High accuracy failed. Switching to fallback...");
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              clearTimeout(forceTimeout);
-              handleGeoSuccess(pos);
-            }, 
-            (error) => {
-              clearTimeout(forceTimeout);
-              handleGeoError(error);
-            }, 
-            { enableHighAccuracy: false, timeout: 5000 }
-          );
+          if (isResolved) return;
+          
+          // หากความละเอียดสูงพลาด ให้ลองแบบสำรอง โดยใช้ setTimeout กันเบราว์เซอร์ค้าง
+          setTimeout(() => {
+            if (isResolved) return;
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                if (isResolved) return;
+                isResolved = true;
+                clearTimeout(forceTimeout);
+                handleGeoSuccess(pos);
+              }, 
+              (error) => {
+                if (isResolved) return;
+                isResolved = true;
+                clearTimeout(forceTimeout);
+                handleGeoError(error);
+              }, 
+              { enableHighAccuracy: false, timeout: 3000, maximumAge: 15000 }
+            );
+          }, 200); 
         }, 
         geoOptionsHigh
       );
@@ -263,7 +278,6 @@
     }
 
     function toggleActionButtons(withinRange) {
-      // ใช้ style.display ทับ CSS ไปเลยเพื่อความชัวร์ 100% ว่าปุ่มโผล่แน่นอน
       if (withinRange) {
         document.getElementById('in-range-zone').style.display = 'block';
         document.getElementById('out-of-range-zone').style.display = 'none';
@@ -282,7 +296,6 @@
       
       showLoading(`กำลังส่งข้อมูลสถานะ "${selectedStatus}" เข้าสู่ระบบ...`);
       
-      // ล็อกปุ่มที่กดไม่ให้กดเบิ้ล
       let originalText = btnElement.innerText;
       btnElement.disabled = true;
       btnElement.innerText = "⏳ กำลังบันทึกข้อมูล...";
