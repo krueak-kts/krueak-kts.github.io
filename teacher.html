@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบคุณครูประจำชั้น (Teacher Portal)</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; margin: 0; padding: 15px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header-card { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    h2 { margin-top: 0; font-size: 18px; color: #1f2937; display: flex; justify-content: space-between; align-items: center; }
+    .student-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .student-info { font-size: 15px; color: #374151; }
+    .student-id { font-size: 12px; color: #9ca3af; }
+    .status-group { display: flex; gap: 5px; }
+    .status-btn { border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; background: white; font-weight: 600; }
+    
+    /* สีคีย์สถานะเปิดใช้งาน */
+    .btn-present.active { background-color: #10b981; color: white; border-color: #10b981; }
+    .btn-sick.active { background-color: #f59e0b; color: white; border-color: #f59e0b; }
+    .btn-leave.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+    .btn-absent.active { background-color: #ef4444; color: white; border-color: #ef4444; }
+
+    .nav-btn { display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; text-align: center; font-size: 14px; }
+    .submit-btn { width: 100%; padding: 14px; background-color: #1e3a8a; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 10px; }
+    #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; font-weight: bold; z-index: 1000; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <div id="loading">กำลังโหลดข้อมูลห้องเรียนประจำชั้น...</div>
+
+  <div class="container">
+    <div class="header-card">
+      <h3 style="margin:0; font-size: 14px; opacity: 0.8;">ระบบบริหารจัดการคุณครู</h3>
+      <h1 id="teacher-name" style="margin:5px 0 0 0; font-size: 20px;">คุณครูประจำชั้น</h1>
+      <p id="teacher-class" style="margin: 5px 0 0 0; font-size: 14px; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 20px;">ห้อง:กำลังโหลด...</p>
+      <br>
+      <a href="summary.html" class="nav-btn">📊 ดูสรุปสถิติการมาเรียนภาพรวมโรงเรียน</a>
+    </div>
+
+    <div class="card">
+      <h2>✍️ บันทึกตารางเช็คชื่อเข้าชั้นเรียน <span style="font-size:12px; color:#6b7280;">(เลือกปรับเปลี่ยนได้รายบุคคล)</span></h2>
+      <div id="student-list-container">
+        </div>
+    </div>
+
+    <button class="submit-btn" onclick="saveAllAttendance()">💾 ยืนยันบันทึกเวลาเรียนนักเรียนทั้งหมด</button>
+  </div>
+
+  <script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
+    const LIFF_ID = "2010176412-U51gEMNp";
+    let studentArray = [];
+
+    async function main() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          loadClassRoom(profile.userId);
+        } else {
+          liff.login();
+        }
+      } catch (err) {
+        alert('LIFF Error: ' + err.message);
+      }
+    }
+
+    async function loadClassRoom(userId) {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'getTeacherStudents', userId: userId })
+        });
+        const result = await response.json();
+        document.getElementById('loading').classList.add('hidden');
+
+        if (result.success) {
+          document.getElementById('teacher-name').innerText = `${result.teacher.prefix}${result.teacher.name} ${result.teacher.surname}`;
+          document.getElementById('teacher-class').innerText = `ห้องที่คุณครูดูแล: ชั้น ${result.teacher.assignedClass}`;
+          
+          studentArray = result.students;
+          renderStudentList(studentArray);
+        } else {
+          alert(result.message);
+        }
+      } catch (e) {
+        alert('ไม่สามารถเชื่อมต่อระบบฐานข้อมูลห้องเรียนได้');
+      }
+    }
+
+    function renderStudentList(students) {
+      const container = document.getElementById('student-list-container');
+      if (students.length === 0) {
+        container.innerHTML = `<p style="color:gray; text-align:center;">ไม่พบรายชื่อนักเรียนในระดับชั้นนี้</p>`;
+        return;
+      }
+
+      container.innerHTML = students.map((stu, index) => `
+        <div class="student-row" data-id="${stu.id}">
+          <div class="student-info">
+            <div><b>${index + 1}. ${stu.prefix}${stu.name} ${stu.surname}</b></div>
+            <div class="student-id">รหัสประจำตัว: ${stu.id} (${stu.gender})</div>
+          </div>
+          <div class="status-group">
+            <button class="status-btn btn-present active" onclick="setStatus('${stu.id}', 'มาเรียน', this)">มา</button>
+            <button class="status-btn btn-sick" onclick="setStatus('${stu.id}', 'ป่วย', this)">ป่วย</button>
+            <button class="status-btn btn-leave" onclick="setStatus('${stu.id}', 'ลา', this)">ลา</button>
+            <button class="status-btn btn-absent" onclick="setStatus('${stu.id}', 'ขาด', this)">ขาด</button>
+          </div>
+        </div>
+      `).join('');
+      
+      // เก็บสถานะเริ่มต้นคือ 'มาเรียน' ไว้ใน Array Object ของทุกคน
+      students.forEach(stu => stu.currentStatus = 'มาเรียน');
+    }
+
+    function setStatus(studentId, status, element) {
+      // ปรับปรุงค่าสถานะในตัวแปรระบบ
+      let student = studentArray.find(s => s.id === studentId);
+      if (student) student.currentStatus = status;
+
+      // จัดการเคลียร์สไตล์ปุ่มเดิมรอบข้าง
+      const row = element.parentElement;
+      const buttons = row.querySelectorAll('.status-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      
+      // ใส่สไตล์ active ลงปุ่มที่ถูกกด
+      element.classList.add('active');
+    }
+
+    async function saveAllAttendance() {
+      if(!confirm('คุณครูยืนยันที่จะส่งบันทึกการเช็คชื่อทั้งหมดนี้เข้าสู่ระบบส่วนกลางใช่หรือไม่?')) return;
+      
+      document.getElementById('loading').innerText = "กำลังอัปโหลดบันทึกเวลาเรียนลงระบบวิชาการ...";
+      document.getElementById('loading').classList.remove('hidden');
+
+      let records = studentArray.map(s => ({ studentId: s.id, status: s.currentStatus }));
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'submitBulkAttendance', records: records })
+        });
+        const res = await response.json();
+        document.getElementById('loading').classList.add('hidden');
+
+        if (res.success) {
+          alert('🎉 บันทึกรายชื่อและการเข้าเรียนของนักเรียนในห้องเสร็จสมบูรณ์!');
+        } else {
+          alert('ล้มเหลว: ' + res.message);
+        }
+      } catch (err) {
+        document.getElementById('loading').classList.add('hidden');
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
