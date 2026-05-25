@@ -87,7 +87,6 @@
     <div id="out-of-range-zone" class="hidden">
       <button class="btn-leave-personal" onclick="submitAttendance('ลากิจ')">📝 แจ้งลากิจ</button>
       <button class="btn-leave-sick" onclick="submitAttendance('ลาป่วย')">🤒 แจ้งลาป่วย</button>
-      <button class="btn-absent" onclick="submitAttendance('ขาด')">❌ บันทึกสถานะ (ขาด)</button>
     </div>
 
   </div>
@@ -182,7 +181,7 @@
       if (!navigator.geolocation) {
         hideLoading();
         updateLocationUI(false, "เบราว์เซอร์ไม่รองรับ GPS", "danger");
-        toggleActionButtons(false); // พิกัดไม่ได้ เปิดปุ่ม ลากิจ/ลาป่วย/ขาด
+        toggleActionButtons(false); 
         return;
       }
 
@@ -210,11 +209,11 @@
       if (distance <= maxDistanceAllowed) {
         isWithinRange = true;
         updateLocationUI(true, "✅ พิกัดของคุณอยู่ภายในเขตโรงเรียนเรียบร้อย", "success");
-        toggleActionButtons(true); // อยู่ในระยะ -> โชว์เฉพาะปุ่มลงเวลา
+        toggleActionButtons(true); 
       } else {
         isWithinRange = false;
         updateLocationUI(false, "❌ คุณอยู่นอกพื้นที่ขอบเขตของโรงเรียน", "danger");
-        toggleActionButtons(false); // นอกระยะ -> โชว์เฉพาะปุ่ม ลากิจ ลาป่วย ขาด
+        toggleActionButtons(false); 
       }
       hideLoading();
     }
@@ -227,7 +226,7 @@
       else if (error.code === 3) alertMsg = "⚠️ หมดเวลาเชื่อมสัญญาณพิกัด กรุณากดรีเฟรชลองใหม่";
       
       updateLocationUI(false, alertMsg, "danger");
-      toggleActionButtons(false); // หาก GPS พัง ให้แสดงเฉพาะปุ่มกลุ่มแจ้งลา/ขาด เพื่อความปลอดภัย
+      toggleActionButtons(false); 
     }
 
     function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -244,7 +243,6 @@
       badge.className = "status-badge " + (styleClass === "success" ? "status-success" : styleClass === "danger" ? "status-danger" : "status-warning");
     }
 
-    // ฟังก์ชันจัดการ สลับการแสดงผลของกลุ่มปุ่มกดตามเงื่อนไขระยะทาง GPS
     function toggleActionButtons(withinRange) {
       if (withinRange) {
         document.getElementById('in-range-zone').classList.remove('hidden');
@@ -255,7 +253,6 @@
       }
     }
 
-    // ฟังก์ชันบันทึกเวลาที่อัปเดตรองรับการส่งประเภทสถานะที่เลือก
     async function submitAttendance(selectedStatus) {
       if (selectedStatus === 'มาเรียน' && !isWithinRange) {
         return alert('พิกัดอยู่นอกขอบเขตพื้นที่โรงเรียน ไม่สามารถลงเวลามาเรียนได้ค่ะ');
@@ -274,7 +271,7 @@
             action: 'checkIn',
             roleId: localUserData.id,
             roleText: roleThai,
-            status: selectedStatus // ส่งสถานะเพิ่มเข้าไปใน payload (มาเรียน / ลากิจ / ลาป่วย / ขาด)
+            status: selectedStatus 
           })
         });
         const data = await response.json();
