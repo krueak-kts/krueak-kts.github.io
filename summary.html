@@ -9,7 +9,6 @@
     body { font-family: 'Sarabun', sans-serif; background-color: #ffffff; color: #000000; padding: 30px 15px; margin: 0; }
     .report-container { max-width: 800px; margin: 0 auto; border: 1px solid #000; padding: 25px; box-shadow: 0 0 10px rgba(0,0,0,0.05); }
     .text-center { text-align: center; }
-    .text-right { text-align: right; }
     h1 { font-size: 20px; margin: 5px 0; font-weight: bold; }
     h2 { font-size: 18px; margin: 5px 0; font-weight: normal; }
     
@@ -32,7 +31,7 @@
   <div class="report-container">
     <div class="text-center">
       <h1>แบบบันทึกสถิติการมาเรียนของนักเรียน</h1>
-      <h2 id="report-date">ประจำวันที่ 25 พฤษภาคม 2569</h2>
+      <h2 id="report-date">กำลังดึงข้อมูลวันที่...</h2>
       <h2>โรงเรียนแม่อ้อวิทยาคม</h2>
     </div>
 
@@ -52,7 +51,7 @@
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="11">กำลังสกัดและประมวลผลข้อมูลสถิติของโรงเรียนสดจากระบบฐานข้อมูล...</td></tr>
+        <tr><td colspan="11">กำลังสกัดและประมวลผลข้อมูลสถิติสดจากฐานข้อมูล...</td></tr>
       </tbody>
     </table>
 
@@ -88,11 +87,19 @@
         const data = await response.json();
 
         if (data.success) {
-          // แปลงการจัดรูปแบบวันที่ระบุให้เป็น พ.ศ. 2569 ตามรายงานตัวอย่าง
           const d = new Date(data.dateText);
-          const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-          document.getElementById('report-date').innerText = `ประจำวันที่ ${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`; [cite: 1]
-
+          const thaiMonths = [
+            "มกราคม", "กุมภาพันธ์", "มีนาคม", 
+            "เมษายน", "พฤษภาคม", "มิถุนายน", 
+            "กรกฎาคม", "สิงหาคม", "กันยายน", 
+            "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+          ];
+          
+          let dayNum = d.getDate();
+          let monthText = thaiMonths[d.getMonth()];
+          let thaiYear = d.getFullYear() + 543;
+          
+          document.getElementById('report-date').innerText = "ประจำวันที่ " + dayNum + " " + monthText + " " + thaiYear;
           renderTable(data.summary);
         } else {
           alert('ไม่สามารถโหลดข้อมูลสถิติได้');
@@ -106,18 +113,30 @@
       const tbody = document.getElementById('table-body');
       const levels = ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'];
       
-      let html = "";
-      let grandTotal = { totalM:0, totalF:0, totalAll:0, presentM:0, presentF:0, presentAll:0, absentM:0, absentF:0, absentAll:0 };
+      let htmlString = "";
+      let grandTotal = { 
+        totalM: 0, totalF: 0, totalAll: 0, 
+        presentM: 0, presentF: 0, presentAll: 0, 
+        absentM: 0, absentF: 0, absentAll: 0 
+      };
 
-      levels.forEach(lvl => {
-        let item = summary[lvl] || { totalM: 0, totalF: 0, presentM: 0, presentF: 0, absentM: 0, absentF: 0 };
+      levels.forEach(function(lvl) {
+        let item = summary[lvl];
+        if (!item) {
+          item = { totalM: 0, totalF: 0, presentM: 0, presentF: 0, absentM: 0, absentF: 0 };
+        }
         
         let rowTotal = item.totalM + item.totalF;
         let rowPresent = item.presentM + item.presentF;
         let rowAbsent = item.absentM + item.absentF;
-        let percent = rowTotal > 0 ? ((rowPresent / rowTotal) * 100).toFixed(2) : "0.00";
+        
+        // คำนวณร้อยละแบบตัดเงื่อนไขแยกบรรทัด แก้ปัญหา SyntaxError
+        let percent = "0.00";
+        if (rowTotal > 0) {
+          percent = ((rowPresent / rowTotal) * 100).toFixed(2);
+        }
 
-        // สะสมยอดรวมท้ายตาราง
+        // สะสมยอดรวมภาพรวมโรงเรียน
         grandTotal.totalM += item.totalM;
         grandTotal.totalF += item.totalF;
         grandTotal.totalAll += rowTotal;
@@ -128,30 +147,30 @@
         grandTotal.absentF += item.absentF;
         grandTotal.absentAll += rowAbsent;
 
-        html += `
-          <tr>
-            <td><b>${lvl}</b></td>
-            <td>${item.totalM}</td><td>${item.totalF}</td><td><b>${rowTotal}</b></td>
-            <td>${item.presentM}</td><td>${item.presentF}</td><td style="color:green"><b>${rowPresent}</b></td>
-            <td>${item.absentM}</td><td>${item.absentF}</td><td style="color:red"><b>${rowAbsent}</b></td>
-            <td><b>${percent}</b></td>
-          </tr>
-        `;
+        htmlString += "<tr>" +
+          "<td><b>" + lvl + "</b></td>" +
+          "<td>" + item.totalM + "</td><td>" + item.totalF + "</td><td><b>" + rowTotal + "</b></td>" +
+          "<td>" + item.presentM + "</td><td>" + item.presentF + "</td><td style='color:green'><b>" + rowPresent + "</b></td>" +
+          "<td>" + item.absentM + "</td><td>" + item.absentF + "</td><td style='color:red'><b>" + rowAbsent + "</b></td>" +
+          "<td><b>" + percent + "</b></td>" +
+          "</tr>";
       });
 
-      // แถวสรุปรวมทั้งหมดด้านล่างสุด
-      let grandPercent = grandTotal.totalAll > 0 ? ((grandTotal.presentAll / grandTotal.totalAll) * 100).toFixed(2) : "0.00";
-      html += `
-        <tr style="background-color: #e5e7eb; font-weight: bold;">
-          <td>รวม</td>
-          <td>${grandTotal.totalM}</td><td>${grandTotal.totalF}</td><td>${grandTotal.totalAll}</td>
-          <td>${grandTotal.presentM}</td><td>${grandTotal.presentF}</td><td>${grandTotal.presentAll}</td>
-          <td>${grandTotal.absentM}</td><td>${grandTotal.absentF}</td><td>${grandTotal.absentAll}</td>
-          <td>${grandPercent}</td>
-        </tr>
-      `;
+      // แถวสรุปรวมทั้งหมด
+      let grandPercent = "0.00";
+      if (grandTotal.totalAll > 0) {
+        grandPercent = ((grandTotal.presentAll / grandTotal.totalAll) * 100).toFixed(2);
+      }
 
-      tbody.innerHTML = html;
+      htmlString += "<tr style='background-color: #e5e7eb; font-weight: bold;'>" +
+        "<td>รวม</td>" +
+        "<td>" + grandTotal.totalM + "</td><td>" + grandTotal.totalF + "</td><td>" + grandTotal.totalAll + "</td>" +
+        "<td>" + grandTotal.presentM + "</td><td>" + grandTotal.presentF + "</td><td>" + grandTotal.presentAll + "</td>" +
+        "<td>" + grandTotal.absentM + "</td><td>" + grandTotal.absentF + "</td><td>" + grandTotal.absentAll + "</td>" +
+        "<td>" + grandPercent + "</td>" +
+        "</tr>";
+
+      tbody.innerHTML = htmlString;
     }
 
     loadSummaryReport();
