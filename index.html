@@ -3,157 +3,240 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบเช็คชื่อเข้าเรียน</title>
-  
+  <title>เข้าสู่ระบบ (หน้าแรก)</title>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  
   <style>
-    body { font-family: 'Sarabun', Tahoma, sans-serif; text-align: center; background-color: #f4f6f9; padding: 20px; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-    h2 { color: #2c3e50; }
-    button { background-color: #00B900; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold;}
+    body { font-family: 'Sarabun', sans-serif; text-align: center; background-color: #f4f6f9; padding: 20px; }
+    .card { background: white; padding: 30px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+    h2 { color: #2c3e50; margin-bottom: 20px; }
+    input[type="text"] { width: 90%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; text-align: center; }
+    button { color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; font-weight: bold; }
+    .btn-primary { background-color: #00B900; }
+    .btn-confirm { background-color: #2980b9; }
+    .btn-camera { background-color: #e67e22; }
+    .btn-cancel { background-color: #e74c3c; margin-top: 10px; }
     button:disabled { background-color: #cccccc; cursor: not-allowed; }
-    #preview { max-width: 100%; border-radius: 8px; margin-top: 15px; border: 2px solid #ddd; }
-    #status { margin-top: 15px; font-weight: bold; line-height: 1.5; }
-    .profile-info { margin-bottom: 15px; font-size: 18px; color: #34495e;}
+    #status { margin-top: 15px; font-size: 14px; font-weight: bold; color: #7f8c8d; }
+    #profile-preview { max-width: 100%; max-height: 250px; border-radius: 8px; margin: 15px auto; border: 2px dashed #ccc; display: none; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h2>📍 เช็คชื่อเข้าเรียน</h2>
-    <div id="profile" class="profile-info">กำลังเตรียมระบบ...</div>
+    <h2>🔐 ระบบตรวจสอบสิทธิ์</h2>
     
-    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none;" onchange="handleImage(this)">
-    <button id="btnCamera" onclick="document.getElementById('camera').click()" style="display:none;">📸 ถ่ายรูปเช็คชื่อ</button>
-    
-    <img id="preview" style="display: none;">
-    <button id="btnSubmit" onclick="getLocationAndSubmit()" style="display:none; background-color:#2980b9;">✅ ยืนยันการเช็คชื่อ</button>
-    <div id="status"></div>
+    <div id="section-loading">
+      <p>กำลังเชื่อมต่อ LINE...</p>
+      <div id="status"></div>
+    </div>
+
+    <div id="section-register" class="hidden">
+      <p style="color:#d35400;">คุณยังไม่ได้ลงทะเบียนผูกบัญชี</p>
+      <p>กรุณากรอก <b>รหัสนักเรียน / รหัสครู / รหัสผู้ปกครอง</b></p>
+      <input type="text" id="systemId" placeholder="พิมพ์รหัสของคุณที่นี่">
+      <button class="btn-primary" id="btnVerify" onclick="verifyId()">ตรวจสอบรหัส</button>
+    </div>
+
+    <div id="section-confirm" class="hidden">
+      <p>พบข้อมูลในระบบ!</p>
+      <h3 id="confirmName" style="color:#2980b9;"></h3>
+      <p style="font-size: 14px; margin-bottom: 5px;">นี่คือชื่อของคุณใช่หรือไม่?</p>
+      
+      <div id="student-photo-zone" class="hidden" style="background: #fdf2e9; padding: 15px; border-radius: 8px; margin: 15px 0;">
+        <b style="color: #e67e22;">📸 ขั้นตอนเพิ่มเติม: ถ่ายรูปโปรไฟล์นักเรียน</b>
+        <p style="font-size: 12px; margin: 5px 0 10px 0; color:#666;">กรุณาถ่ายรูปหน้าตรงเพื่อใช้เก็บในระบบฐานข้อมูล</p>
+        <input type="file" id="profileCamera" accept="image/*" capture="user" style="display:none;" onchange="handleProfileImage(this)">
+        <button class="btn-camera" type="button" onclick="document.getElementById('profileCamera').click()">เปิดกล้องถ่ายรูปโปรไฟล์</button>
+        <img id="profile-preview">
+      </div>
+
+      <button class="btn-confirm" id="btnSubmitRegister" onclick="registerLine()">✅ ใช่, ลงทะเบียนเลย</button>
+      <button class="btn-cancel" onclick="cancelVerify()">❌ ไม่ใช่, กลับไปพิมพ์ใหม่</button>
+    </div>
+
   </div>
 
   <script>
-    let userId = '';
-    let imageBase64 = '';
-    
-    // ⚠️ นำลิงก์ Web App (ที่ลงท้ายด้วย /exec) ของคุณมาใส่ตรงนี้
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbwNacVFUG7rhKQHj9fZqVKukHTKgI3O5QKlscSTUkWSSvADjEBFdd-VTEgOmibYAguq_Q/exec"; 
     const LIFF_ID = "2010176412-U51gEMNp";
     
+    let userProfile = null;
+    let foundUserData = null; 
+    let imageBase64Data = ""; // เก็บค่ารูปภาพโปรไฟล์ชั่วคราว
+
     async function main() {
       try {
         await liff.init({ liffId: LIFF_ID });
-        
         if (liff.isLoggedIn()) {
-          const profile = await liff.getProfile();
-          userId = profile.userId;
-          document.getElementById('profile').innerHTML = `สวัสดี<br><b>${profile.displayName}</b>`;
-          document.getElementById('btnCamera').style.display = 'block';
+          userProfile = await liff.getProfile();
+          document.getElementById('status').innerText = 'กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...';
+          checkUserRegistration();
         } else {
-          document.getElementById('profile').innerHTML = 'กำลังพาไปหน้าล็อกอิน...';
+          document.getElementById('status').innerText = 'กำลังพาไปหน้าล็อกอิน...';
           liff.login(); 
         }
       } catch (err) {
-        document.getElementById('profile').innerHTML = '❌ การเชื่อมต่อล้มเหลว';
-        document.getElementById('status').innerHTML = 'Error: ' + err.message;
+        document.getElementById('status').innerText = 'Error: ' + err.message;
         document.getElementById('status').style.color = 'red';
       }
     }
-    
-    function handleImage(input) {
-       const file = input.files[0];
-       if(!file) return;
-       
-       document.getElementById('status').innerHTML = ''; 
-       const reader = new FileReader();
-       reader.onload = function(e) {
-          const img = new Image();
-          img.onload = function() {
-             const canvas = document.createElement('canvas');
-             const MAX_WIDTH = 800;
-             const scaleSize = MAX_WIDTH / img.width;
-             canvas.width = MAX_WIDTH;
-             canvas.height = img.height * scaleSize;
-             const ctx = canvas.getContext('2d');
-             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-             
-             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-             document.getElementById('preview').src = dataUrl;
-             document.getElementById('preview').style.display = 'block';
-             
-             imageBase64 = dataUrl.split(',')[1]; 
-             document.getElementById('btnSubmit').style.display = 'block';
-             document.getElementById('btnCamera').innerHTML = '📸 ถ่ายรูปใหม่';
-          }
-          img.src = e.target.result;
-       }
-       reader.readAsDataURL(file);
-    }
-    
-    function getLocationAndSubmit() {
-      document.getElementById('status').style.color = '#d35400';
-      document.getElementById('status').innerHTML = "⏳ กำลังดึงพิกัด GPS...";
-      document.getElementById('btnSubmit').disabled = true;
-      document.getElementById('btnCamera').disabled = true;
-      
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(sendDataToServer, showError, {
-           enableHighAccuracy: true, timeout: 15000, maximumAge: 0
-        });
-      } else {
-        document.getElementById('status').innerHTML = "❌ อุปกรณ์ไม่รองรับ GPS";
-        enableButtons();
-      }
-    }
-    
-    // ฟังก์ชันส่งข้อมูลด้วย API แทนที่ google.script.run
-    function sendDataToServer(position) {
-      document.getElementById('status').innerHTML = "⏳ กำลังบันทึกข้อมูล...";
-      
-      const payload = {
-        userId: userId,
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        imageBase64: imageBase64,
-        mimeType: 'image/jpeg'
-      };
-      
-      // ส่งคำสั่ง POST ไปยัง Google Apps Script
+
+    // ตรวจสอบสถานะการลงทะเบียนในอดีต
+    function checkUserRegistration() {
       fetch(GAS_URL, {
-        redirect: "follow",
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ป้องกันปัญหา CORS
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'checkUser', userId: userProfile.userId })
       })
-      .then(response => response.json())
+      .then(res => res.json())
       .then(data => {
-         document.getElementById('status').innerHTML = data.message;
-         if(data.success) {
-            document.getElementById('status').style.color = 'green';
-            setTimeout(() => { if(liff.isInClient()) liff.closeWindow(); }, 3000); 
-         } else {
-            document.getElementById('status').style.color = 'red';
-            enableButtons();
-         }
+        if (data.isRegistered) {
+          document.getElementById('status').innerText = `ยินดีต้อนรับ ${data.name} กำลังพาไปหน้าหลัก...`;
+          setTimeout(() => {
+            if (data.role === 'student') window.location.href = 'checkstu.html';
+            else if (data.role === 'teacher') window.location.href = 'teacher.html';
+            else if (data.role === 'parent') window.location.href = 'parent.html';
+          }, 1500);
+        } else {
+          document.getElementById('section-loading').classList.add('hidden');
+          document.getElementById('section-register').classList.remove('hidden');
+        }
       })
-      .catch(error => {
-         document.getElementById('status').style.color = 'red';
-         document.getElementById('status').innerHTML = "❌ ติดต่อเซิร์ฟเวอร์ไม่ได้: " + error.message;
-         enableButtons();
-      });
-    }
-    
-    function showError(error) {
-       let msg = "❌ หาตำแหน่งไม่ได้ (โปรดเปิด GPS)";
-       document.getElementById('status').innerHTML = msg;
-       enableButtons();
+      .catch(err => alert("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล"));
     }
 
-    function enableButtons() {
-       document.getElementById('btnSubmit').disabled = false;
-       document.getElementById('btnCamera').disabled = false;
+    // ส่งรหัสไปตรวจเช็คพิกัดบทบาท
+    function verifyId() {
+      const systemId = document.getElementById('systemId').value;
+      if (!systemId) return alert('กรุณากรอกรหัสก่อนครับ');
+
+      const btn = document.getElementById('btnVerify');
+      btn.innerText = 'กำลังค้นหา...';
+      btn.disabled = true;
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'verifyId', systemId: systemId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        btn.innerText = 'ตรวจสอบรหัส';
+        btn.disabled = false;
+
+        if (data.success) {
+          foundUserData = data; 
+          document.getElementById('section-register').classList.add('hidden');
+          document.getElementById('section-confirm').classList.remove('hidden');
+          document.getElementById('confirmName').innerText = data.name;
+          
+          // 🔎 คัดกรองบทบาท: ถ้านักเรียนให้เปิดโซนถ่ายรูป และล็อกปุ่มลงทะเบียนไว้ก่อนจนกว่าจะถ่ายรูป
+          if (data.role === 'student') {
+            document.getElementById('student-photo-zone').classList.remove('hidden');
+            document.getElementById('btnSubmitRegister').disabled = true; 
+            document.getElementById('btnSubmitRegister').innerText = "⚠️ โปรดถ่ายรูปก่อนกดยืนยัน";
+          } else {
+            // ถ้าเป็นครู หรือ ผู้ปกครอง ปิดส่วนถ่ายรูป และให้กดลงทะเบียนได้ทันที
+            document.getElementById('student-photo-zone').classList.add('hidden');
+            document.getElementById('btnSubmitRegister').disabled = false;
+            document.getElementById('btnSubmitRegister').innerText = "✅ ใช่, ลงทะเบียนเลย";
+          }
+        } else {
+          alert(data.message);
+        }
+      })
+      .catch(err => {
+        btn.innerText = 'ตรวจสอบรหัส';
+        btn.disabled = false;
+        alert("ติดต่อเซิร์ฟเวอร์ไม่ได้");
+      });
     }
-    
+
+    // จัดการกระบวนการย่อขนาดภาพถ่ายโปรไฟล์นักเรียนและแปลงเป็น Base64
+    function handleProfileImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 400; // รูปโปรไฟล์ใช้ขนาดกว้าง 400px พอครับ ประหยัดพื้นที่ไดรว์
+          const scaleSize = MAX_WIDTH / img.width;
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleSize;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          const previewImg = document.getElementById('profile-preview');
+          previewImg.src = dataUrl;
+          previewImg.style.display = 'block';
+          
+          // เก็บค่ารูป Base64 ลงในตัวแปรเพื่อรอส่งไปเซิร์ฟเวอร์
+          imageBase64Data = dataUrl; 
+          
+          // ปลดล็อกปุ่มให้ลงทะเบียนได้
+          document.getElementById('btnSubmitRegister').disabled = false;
+          document.getElementById('btnSubmitRegister').innerText = "✅ ใช่, ลงทะเบียนเลย";
+        }
+        img.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    }
+
+    // บันทึกการลงทะเบียนขั้นสุดท้าย
+    function registerLine() {
+      const btn = document.getElementById('btnSubmitRegister');
+      btn.innerText = "⏳ กำลังลงทะเบียน...";
+      btn.disabled = true;
+
+      fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ 
+          action: 'registerLine', 
+          role: foundUserData.role,
+          rowNumber: foundUserData.rowNumber,
+          systemId: foundUserData.systemId,
+          userId: userProfile.userId,
+          displayName: userProfile.displayName,
+          imageBase64: imageBase64Data // ส่งรูปไป (ถ้าไม่ใช่กลุ่มนักเรียน ค่าจะเป็นค่าว่าง โค้ดฝั่งเซิร์ฟเวอร์จะไม่บันทึกรูป)
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          alert("ลงทะเบียนผูกบัญชีสำเร็จเรียบร้อยครับ!");
+          if (foundUserData.role === 'student') window.location.href = 'checkstu.html';
+          else if (foundUserData.role === 'teacher') window.location.href = 'teacher.html';
+          else if (foundUserData.role === 'parent') window.location.href = 'parent.html';
+        } else {
+          alert("เกิดข้อผิดพลาด: " + data.message);
+          btn.disabled = false;
+          btn.innerText = "✅ ใช่, ลงทะเบียนเลย";
+        }
+      })
+      .catch(err => {
+         alert("ล้มเหลวในการเชื่อมต่อเซิร์ฟเวอร์");
+         btn.disabled = false;
+         btn.innerText = "✅ ใช่, ลงทะเบียนเลย";
+      });
+    }
+
+    function cancelVerify() {
+      document.getElementById('section-confirm').classList.add('hidden');
+      document.getElementById('section-register').classList.remove('hidden');
+      document.getElementById('systemId').value = '';
+      document.getElementById('profile-preview').style.display = 'none';
+      document.getElementById('profile-preview').src = '';
+      imageBase64Data = "";
+      foundUserData = null;
+    }
+
     main();
   </script>
 </body>
