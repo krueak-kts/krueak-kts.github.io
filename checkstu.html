@@ -23,21 +23,19 @@
     .location-details { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin: 15px 0; font-size: 14px; }
     .location-details p { margin: 6px 0; color: #4a5568; }
     
-    /* สไตล์ปุ่มกดหลัก */
+    /* สไตล์ปุ่มกดต่างๆ */
     button { color: white; border: none; padding: 14px 20px; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; transition: all 0.2s; }
     button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.7; cursor: not-allowed; }
     
-    /* สีของแต่ละสถานะปุ่ม */
     .btn-checkin { background-color: #00B900; }
     .btn-leave-personal { background-color: #f59e0b; margin-bottom: 12px; }
     .btn-leave-sick { background-color: #3b82f6; margin-bottom: 12px; }
-    .btn-absent { background-color: #ef4444; }
     
     .btn-refresh { background-color: #ffffff; color: #4a5568; border: 1px solid #cbd5e1; font-size: 13px; padding: 6px 12px; width: auto; margin-top: 5px; border-radius: 6px; cursor: pointer; }
     #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .hidden { display: none !important; }
     hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 12px 0; }
   </style>
 </head>
@@ -80,13 +78,13 @@
       </div>
     </div>
 
-    <div id="in-range-zone" class="hidden">
-      <button id="btnCheckIn" class="btn-checkin" onclick="submitAttendance('มาเรียน')">⏰ บันทึกข้อมูลลงเวลา</button>
+    <div id="in-range-zone" style="display: none;">
+      <button class="btn-checkin" onclick="submitAttendance('มาเรียน', this)">⏰ บันทึกข้อมูลลงเวลา (มาเรียน)</button>
     </div>
 
-    <div id="out-of-range-zone" class="hidden">
-      <button class="btn-leave-personal" onclick="submitAttendance('ลากิจ')">📝 แจ้งลากิจ</button>
-      <button class="btn-leave-sick" onclick="submitAttendance('ลาป่วย')">🤒 แจ้งลาป่วย</button>
+    <div id="out-of-range-zone" style="display: none;">
+      <button class="btn-leave-personal" onclick="submitAttendance('ลากิจ', this)">📝 แจ้งลากิจ</button>
+      <button class="btn-leave-sick" onclick="submitAttendance('ลาป่วย', this)">🤒 แจ้งลาป่วย</button>
     </div>
 
   </div>
@@ -244,16 +242,17 @@
     }
 
     function toggleActionButtons(withinRange) {
+      // ใช้ style.display ทับ CSS ไปเลยเพื่อความชัวร์ 100% ว่าปุ่มโผล่แน่นอน
       if (withinRange) {
-        document.getElementById('in-range-zone').classList.remove('hidden');
-        document.getElementById('out-of-range-zone').classList.add('hidden');
+        document.getElementById('in-range-zone').style.display = 'block';
+        document.getElementById('out-of-range-zone').style.display = 'none';
       } else {
-        document.getElementById('in-range-zone').classList.add('hidden');
-        document.getElementById('out-of-range-zone').classList.remove('hidden');
+        document.getElementById('in-range-zone').style.display = 'none';
+        document.getElementById('out-of-range-zone').style.display = 'block';
       }
     }
 
-    async function submitAttendance(selectedStatus) {
+    async function submitAttendance(selectedStatus, btnElement) {
       if (selectedStatus === 'มาเรียน' && !isWithinRange) {
         return alert('พิกัดอยู่นอกขอบเขตพื้นที่โรงเรียน ไม่สามารถลงเวลามาเรียนได้ค่ะ');
       }
@@ -261,6 +260,12 @@
       if (!confirm(`คุณต้องการยืนยันบันทึกสถานะ "${selectedStatus}" ใช่หรือไม่?`)) return;
       
       showLoading(`กำลังส่งข้อมูลสถานะ "${selectedStatus}" เข้าสู่ระบบ...`);
+      
+      // ล็อกปุ่มที่กดไม่ให้กดเบิ้ล
+      let originalText = btnElement.innerText;
+      btnElement.disabled = true;
+      btnElement.innerText = "⏳ กำลังบันทึกข้อมูล...";
+
       let roleThai = localUserData.role === 'student' ? 'นักเรียน' : localUserData.role === 'teacher' ? 'ครู' : 'ผู้ปกครอง';
 
       try {
@@ -282,10 +287,14 @@
           liff.closeWindow();
         } else {
           alert('ข้อผิดพลาดจากระบบ: ' + data.message);
+          btnElement.disabled = false;
+          btnElement.innerText = originalText;
         }
       } catch (err) {
         hideLoading();
         alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณาลองใหม่อีกครั้ง');
+        btnElement.disabled = false;
+        btnElement.innerText = originalText;
       }
     }
 
