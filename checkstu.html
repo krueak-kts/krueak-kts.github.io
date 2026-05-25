@@ -22,9 +22,17 @@
     .status-warning { background-color: #fef9e7; color: #f1c40f; }
     .location-details { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin: 15px 0; font-size: 14px; }
     .location-details p { margin: 6px 0; color: #4a5568; }
+    
+    /* สไตล์ปุ่มกดหลัก */
     button { color: white; border: none; padding: 14px 20px; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; transition: all 0.2s; }
+    button:active { transform: scale(0.98); }
+    
+    /* สีของแต่ละสถานะปุ่ม */
     .btn-checkin { background-color: #00B900; }
-    .btn-checkin:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+    .btn-leave-personal { background-color: #f59e0b; margin-bottom: 12px; }
+    .btn-leave-sick { background-color: #3b82f6; margin-bottom: 12px; }
+    .btn-absent { background-color: #ef4444; }
+    
     .btn-refresh { background-color: #ffffff; color: #4a5568; border: 1px solid #cbd5e1; font-size: 13px; padding: 6px 12px; width: auto; margin-top: 5px; border-radius: 6px; cursor: pointer; }
     #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
@@ -72,11 +80,19 @@
       </div>
     </div>
 
-    <button id="btnCheckIn" class="btn-checkin" disabled onclick="submitAttendance()">⏰ บันทึกข้อมูลลงเวลา</button>
+    <div id="in-range-zone" class="hidden">
+      <button id="btnCheckIn" class="btn-checkin" onclick="submitAttendance('มาเรียน')">⏰ บันทึกข้อมูลลงเวลา</button>
+    </div>
+
+    <div id="out-of-range-zone" class="hidden">
+      <button class="btn-leave-personal" onclick="submitAttendance('ลากิจ')">📝 แจ้งลากิจ</button>
+      <button class="btn-leave-sick" onclick="submitAttendance('ลาป่วย')">🤒 แจ้งลาป่วย</button>
+      <button class="btn-absent" onclick="submitAttendance('ขาด')">❌ บันทึกสถานะ (ขาด)</button>
+    </div>
+
   </div>
 
   <script>
-    // 🌟 อัปเดตใช้ URL ตัวใหม่ล่าสุดของคุณแล้วเรียบร้อย 🌟
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
     const LIFF_ID = "2010176412-U51gEMNp";
 
@@ -103,7 +119,6 @@
       }
     }
 
-    // ฟังก์ชันโหลดค่าคอนฟิกและโปรไฟล์
     async function loadConfigAndUser() {
       try {
         const response = await fetch(GAS_URL, {
@@ -114,7 +129,6 @@
         const result = await response.json();
         
         if (result.success) {
-          // 1. นำข้อมูลจาก Settings หน้าชีตมาตั้งค่าในแอป
           schoolLat = result.settings.schoolLat;
           schoolLng = result.settings.schoolLng;
           maxDistanceAllowed = result.settings.maxDist;
@@ -122,11 +136,9 @@
           document.getElementById('target-geo-text').innerText = `${schoolLat}, ${schoolLng}`;
           document.getElementById('rule-text').innerText = `ต้องอยู่ภายในรัศมี ${maxDistanceAllowed} เมตร`;
 
-          // 2. จัดการแสดงโปรไฟล์ตามเงื่อนไขที่ผู้ใช้งานต้องการ
           localUserData = result.user;
           renderProfileDOM(localUserData);
 
-          // 3. เริ่มเรียกใช้ฟังก์ชันระบุพิกัด GPS ทันที
           getLocationAndCalculate();
         } else {
           showError(result.message || 'ไม่พบรายชื่อของคุณในสิทธิ์การใช้งานฐานข้อมูล');
@@ -136,26 +148,22 @@
       }
     }
 
-    // ฟังก์ชันแยกเงื่อนไขการวาดโครงสร้างแสดงข้อมูลตามเงื่อนไขของแต่ละสิทธิ์
     function renderProfileDOM(user) {
       const zone = document.getElementById('profile-info-zone');
       let htmlContent = "";
 
       if (user.role === 'student') {
-        // นักเรียน -> แสดงคำนำหน้า ชื่อ นามสกุล ชั้น
         htmlContent = `
           <h3>${user.prefix}${user.name} ${user.surname}</h3>
           <p>สถานะ: <b>นักเรียน</b> (รหัส: ${user.id})</p>
           <p>ระดับชั้นเรียน: <b style="color:#00B900;">ชั้น ${user.className || 'ไม่ระบุ'}</b></p>
         `;
       } else if (user.role === 'teacher') {
-        // ครู -> แสดงคำนำหน้า ชื่อ นามสกุล
         htmlContent = `
           <h3>${user.prefix}${user.name} ${user.surname}</h3>
           <p>สถานะ: <b>ครู / บุคลากร</b> (รหัส: ${user.id})</p>
         `;
       } else if (user.role === 'parent') {
-        // ผู้ปกครอง -> แสดงคำนำหน้า ชื่อ นามสกุล ของผู้ปกครอง และ เด็ก (คำนำหน้า ชื่อ นามสกุล ชั้น)
         htmlContent = `
           <h3>ผู้ปกครอง: ${user.prefix}${user.name} ${user.surname}</h3>
           <p>สถานะ: <b>ผู้ปกครอง</b> (รหัส: ${user.id})</p>
@@ -168,24 +176,22 @@
       zone.innerHTML = htmlContent;
     }
 
-    // 🛠️ กลไกแก้ปัญหาอาการค้าง: จับสัญญาณ HighAccuracy แบบจำกัดเวลา หากหน่วงหรือค้างจะดึงพิกัดแบบทั่วไปแทนอัตโนมัติ
     function getLocationAndCalculate() {
       showLoading('กำลังประมวลผลจับพิกัดดาวเทียม GPS...');
       
       if (!navigator.geolocation) {
         hideLoading();
         updateLocationUI(false, "เบราว์เซอร์ไม่รองรับ GPS", "danger");
+        toggleActionButtons(false); // พิกัดไม่ได้ เปิดปุ่ม ลากิจ/ลาป่วย/ขาด
         return;
       }
 
-      // ตั้งเงื่อนไขค้นหาพิกัดละเอียดสูง จำกัดเวลาการทำงานที่ 5 วินาทีเพื่อป้องกันหน้าเว็บค้าง
       const geoOptionsHigh = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
       
       navigator.geolocation.getCurrentPosition(
         handleGeoSuccess, 
         (err) => {
           console.warn("High accuracy timed out or failed. Switching to standard fallback location...");
-          // Fallback: สลับไปใช้ความแม่นยำทั่วไปใน 5 วินาทีทันที เพื่อไม่ให้หน้าเว็บหยุดนิ่ง
           navigator.geolocation.getCurrentPosition(handleGeoSuccess, handleGeoError, { enableHighAccuracy: false, timeout: 5000 });
         }, 
         geoOptionsHigh
@@ -198,18 +204,17 @@
       
       document.getElementById('user-geo-text').innerText = `${uLat.toFixed(6)}, ${uLng.toFixed(6)}`;
       
-      // คำนวณความห่างเทียบพิกัดจากชีต Settings
       const distance = haversineDistance(uLat, uLng, schoolLat, schoolLng);
       document.getElementById('distance-text').innerText = `${Math.round(distance)} เมตร`;
       
       if (distance <= maxDistanceAllowed) {
         isWithinRange = true;
         updateLocationUI(true, "✅ พิกัดของคุณอยู่ภายในเขตโรงเรียนเรียบร้อย", "success");
-        document.getElementById('btnCheckIn').disabled = false;
+        toggleActionButtons(true); // อยู่ในระยะ -> โชว์เฉพาะปุ่มลงเวลา
       } else {
         isWithinRange = false;
         updateLocationUI(false, "❌ คุณอยู่นอกพื้นที่ขอบเขตของโรงเรียน", "danger");
-        document.getElementById('btnCheckIn').disabled = true;
+        toggleActionButtons(false); // นอกระยะ -> โชว์เฉพาะปุ่ม ลากิจ ลาป่วย ขาด
       }
       hideLoading();
     }
@@ -217,12 +222,12 @@
     function handleGeoError(error) {
       hideLoading();
       let alertMsg = "ไม่สามารถระบุพิกัดตำแหน่งได้";
-      if (error.code === 1) alertMsg = "⚠️ โปรดเปิดสิทธิ์อนุมัติ 'เข้าถึงตำแหน่งพิกัด' บนหน้าเว็บบนมือถือ";
-      else if (error.code === 2) alertMsg = "⚠️ ไม่สามารถติดต่อสัญญาณ GPS ได้ (โปรดตรวจสอบการเปิด GPS บนเครื่อง)";
-      else if (error.code === 3) alertMsg = "⚠️ หมดเวลาเชื่อมสัญญาณพิกัด กรุณากดรีเฟรชลองใหม่อีกครั้ง";
+      if (error.code === 1) alertMsg = "⚠️ โปรดเปิดสิทธิ์อนุมัติ 'เข้าถึงตำแหน่งพิกัด' บนมือถือของคุณ";
+      else if (error.code === 2) alertMsg = "⚠️ ไม่สามารถติดต่อสัญญาณ GPS ได้";
+      else if (error.code === 3) alertMsg = "⚠️ หมดเวลาเชื่อมสัญญาณพิกัด กรุณากดรีเฟรชลองใหม่";
       
       updateLocationUI(false, alertMsg, "danger");
-      document.getElementById('btnCheckIn').disabled = true;
+      toggleActionButtons(false); // หาก GPS พัง ให้แสดงเฉพาะปุ่มกลุ่มแจ้งลา/ขาด เพื่อความปลอดภัย
     }
 
     function haversineDistance(lat1, lon1, lat2, lon2) {
@@ -239,14 +244,26 @@
       badge.className = "status-badge " + (styleClass === "success" ? "status-success" : styleClass === "danger" ? "status-danger" : "status-warning");
     }
 
-    async function submitAttendance() {
-      if (!isWithinRange) return alert('พิกัดอยู่นอกขอบเขตที่โรงเรียนกำหนด ไม่สามารถทำรายการได้ครับ');
-      
-      const btn = document.getElementById('btnCheckIn');
-      btn.innerText = "⏳ กำลังบันทึกข้อมูลเวลาลงฐานข้อมูล...";
-      btn.disabled = true;
-      showLoading('กำลังส่งข้อมูลประวัติเข้าสู่หน้าชีต Attendance...');
+    // ฟังก์ชันจัดการ สลับการแสดงผลของกลุ่มปุ่มกดตามเงื่อนไขระยะทาง GPS
+    function toggleActionButtons(withinRange) {
+      if (withinRange) {
+        document.getElementById('in-range-zone').classList.remove('hidden');
+        document.getElementById('out-of-range-zone').classList.add('hidden');
+      } else {
+        document.getElementById('in-range-zone').classList.add('hidden');
+        document.getElementById('out-of-range-zone').classList.remove('hidden');
+      }
+    }
 
+    // ฟังก์ชันบันทึกเวลาที่อัปเดตรองรับการส่งประเภทสถานะที่เลือก
+    async function submitAttendance(selectedStatus) {
+      if (selectedStatus === 'มาเรียน' && !isWithinRange) {
+        return alert('พิกัดอยู่นอกขอบเขตพื้นที่โรงเรียน ไม่สามารถลงเวลามาเรียนได้ค่ะ');
+      }
+
+      if (!confirm(`คุณต้องการยืนยันบันทึกสถานะ "${selectedStatus}" ใช่หรือไม่?`)) return;
+      
+      showLoading(`กำลังส่งข้อมูลสถานะ "${selectedStatus}" เข้าสู่ระบบ...`);
       let roleThai = localUserData.role === 'student' ? 'นักเรียน' : localUserData.role === 'teacher' ? 'ครู' : 'ผู้ปกครอง';
 
       try {
@@ -256,25 +273,22 @@
           body: JSON.stringify({
             action: 'checkIn',
             roleId: localUserData.id,
-            roleText: roleThai
+            roleText: roleThai,
+            status: selectedStatus // ส่งสถานะเพิ่มเข้าไปใน payload (มาเรียน / ลากิจ / ลาป่วย / ขาด)
           })
         });
         const data = await response.json();
         hideLoading();
 
         if (data.success) {
-          alert(`🎉 บันทึกเวลาสำเร็จเรียบร้อยแล้วค่ะ!`);
+          alert(`🎉 บันทึกข้อมูลสถานะ "${selectedStatus}" สำเร็จเรียบร้อยแล้วค่ะ!`);
           liff.closeWindow();
         } else {
           alert('ข้อผิดพลาดจากระบบ: ' + data.message);
-          btn.innerText = "⏰ บันทึกข้อมูลลงเวลา";
-          btn.disabled = false;
         }
       } catch (err) {
         hideLoading();
         alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณาลองใหม่อีกครั้ง');
-        btn.innerText = "⏰ บันทึกข้อมูลลงเวลา";
-        btn.disabled = false;
       }
     }
 
