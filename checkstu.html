@@ -3,178 +3,89 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ระบบเช็คชื่อนักเรียน (Check-in)</title>
+  <title>ระบบลงชื่อเข้าเรียน/ทำงาน (Check-in)</title>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body { 
-      font-family: 'Sarabun', sans-serif; 
-      text-align: center; 
-      background-color: #f0f4f8; 
-      padding: 15px; 
-      margin: 0;
-    }
-    .container { 
-      max-width: 450px; 
-      margin: 20px auto; 
-    }
-    .card { 
-      background: white; 
-      padding: 25px 20px; 
-      border-radius: 16px; 
-      box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-      margin-bottom: 20px;
-      text-align: left;
-    }
+    body { font-family: 'Sarabun', sans-serif; text-align: center; background-color: #f0f4f8; padding: 15px; margin: 0; }
+    .container { max-width: 450px; margin: 20px auto; }
+    .card { background: white; padding: 25px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 20px; text-align: left; }
     .text-center { text-align: center; }
-    h2 { color: #2c3e50; margin-top: 0; margin-bottom: 15px; font-size: 22px; }
-    
-    /* Profile Section */
-    .profile-box { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
-    .profile-avatar { 
-      width: 65px; 
-      height: 65px; 
-      border-radius: 50%; 
-      background: #e1e8ed; 
-      object-fit: cover;
-      border: 2px solid #00B900;
-    }
+    h2 { color: #2c3e50; margin-top: 0; margin-bottom: 15px; font-size: 20px; border-bottom: 2px solid #eaeaea; padding-bottom: 8px; }
+    .profile-box { display: flex; align-items: center; gap: 15px; }
+    .profile-avatar { width: 65px; height: 65px; border-radius: 50%; background: #e1e8ed; object-fit: cover; border: 2px solid #00B900; }
     .profile-info h3 { margin: 0; color: #1a252f; font-size: 18px; }
-    .profile-info p { margin: 4px 0 0 0; color: #7f8c8d; font-size: 14px; }
-
-    /* Location Badge & Box */
-    .status-badge {
-      display: inline-block;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-weight: bold;
-      font-size: 14px;
-      margin-top: 5px;
-    }
+    .profile-info p { margin: 5px 0 0 0; color: #7f8c8d; font-size: 14px; }
+    .status-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 5px; }
     .status-success { background-color: #e8f8f5; color: #2ecc71; }
     .status-danger { background-color: #fdedec; color: #e74c3c; }
     .status-warning { background-color: #fef9e7; color: #f1c40f; }
-
-    .location-details {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px;
-      margin: 15px 0;
-      font-size: 14px;
-    }
+    .location-details { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin: 15px 0; font-size: 14px; }
     .location-details p { margin: 6px 0; color: #4a5568; }
-    .location-details b { color: #2d3748; }
-
-    /* Buttons */
-    button { 
-      color: white; 
-      border: none; 
-      padding: 14px 20px; 
-      border-radius: 10px; 
-      font-size: 18px; 
-      cursor: pointer; 
-      width: 100%; 
-      font-weight: bold; 
-      transition: all 0.2s;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
+    button { color: white; border: none; padding: 14px 20px; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; transition: all 0.2s; }
     .btn-checkin { background-color: #00B900; }
-    .btn-checkin:hover { background-color: #009900; }
-    .btn-checkin:disabled { background-color: #cbd5e1; cursor: not-allowed; box-shadow: none; }
-    
-    .btn-refresh { 
-      background-color: #ffffff; 
-      color: #4a5568; 
-      border: 1px solid #cbd5e1; 
-      font-size: 14px; 
-      padding: 8px 15px; 
-      width: auto; 
-      margin-top: 5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    #loading-overlay {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.9);
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50;
-    }
-    .spinner {
-      border: 4px solid #f3f3f3; border-top: 4px solid #00B900;
-      border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;
-      margin-bottom: 15px;
-    }
+    .btn-checkin:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+    .btn-refresh { background-color: #ffffff; color: #4a5568; border: 1px solid #cbd5e1; font-size: 13px; padding: 6px 12px; width: auto; margin-top: 5px; border-radius: 6px; cursor: pointer; }
+    #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 12px 0; }
   </style>
 </head>
 <body>
 
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div id="loading-text">กำลังตรวจสอบข้อมูลสิทธิ์และพิกัด...</div>
+    <div id="loading-text">กำลังเชื่อมต่อระบบเพื่อตรวจสอบสิทธิ์ใช้งาน...</div>
   </div>
 
   <div class="container">
-    
     <div class="card text-center" style="background: linear-gradient(135deg, #00B900 0%, #009900 100%); color: white;">
-      <h2 style="color: white; margin: 0; font-size: 24px;">📍 ลงชื่อเข้าเรียน</h2>
-      <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">โรงเรียนแม่อ้อวิทยาคม</p>
+      <h2 style="color: white; margin: 0; font-size: 22px; border: none; padding: 0;">📍 ระบบลงชื่อเข้าเรียน / ทำงาน</h2>
+      <p id="school-title" style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">โรงเรียนแม่อ้อวิทยาคม</p>
     </div>
 
     <div class="card">
-      <h2>👤 ข้อมูลผู้ลงชื่อ</h2>
+      <h2>👤 ข้อมูลผู้ใช้งานระบบ</h2>
       <div class="profile-box">
-        <img id="stu-line-img" class="profile-avatar" src="https://img5.pic.in.th/file/secure-sv1/avatar-placeholder.png" alt="Profile">
-        <div class="profile-info">
-          <h3 id="stu-name">กำลังโหลดข้อมูล...</h3>
-          <p>รหัสนักเรียน: <b id="stu-id">-</b></p>
-          <p>ระดับชั้น: <b id="stu-class">-</b></p>
+        <img id="user-line-img" class="profile-avatar" src="https://img5.pic.in.th/file/secure-sv1/avatar-placeholder.png">
+        <div id="profile-info-zone" class="profile-info">
+          <p>กำลังดึงข้อมูลจากฐานข้อมูล...</p>
         </div>
       </div>
     </div>
 
     <div class="card">
-      <h2>📌 ตรวจสอบตำแหน่งพิกัดของคุณ</h2>
-      
+      <h2>📌 ตรวจสอบตำแหน่งพิกัดปัจจุบัน</h2>
       <div class="text-center">
-        <div id="location-status-badge" class="status-badge status-warning">กำลังตรวจสอบตำแหน่ง...</div>
+        <div id="location-status-badge" class="status-badge status-warning">กำลังเริ่มระบุตำแหน่ง...</div>
       </div>
-
       <div class="location-details">
-        <p>📍 พิกัดโรงเรียน: <b>19.677237, 99.85024</b></p>
-        <p>📱 พิกัดของคุณ: <b id="user-geo">-</b></p>
-        <p>📏 ระยะห่างจากโรงเรียน: <b id="distance-text">- เมตร</b></p>
-        <p>🔒 เงื่อนไขสิทธิ์: <b>ต้องอยู่ภายในรัศมี 100 เมตร</b></p>
+        <p>🏫 ศูนย์กลางโรงเรียน: <b id="target-geo-text">กำลังโหลด...</b></p>
+        <p>📱 พิกัดปัจจุบันของคุณ: <b id="user-geo-text">ค้นหาสัญญาณ...</b></p>
+        <p>📏 ระยะห่างของท่าน: <b id="distance-text">คำนวณระยะทาง...</b></p>
+        <p>🔒 ข้อบังคับหน้าเว็บ: <b id="rule-text">ต้องอยู่ภายในรัศมี - เมตร จากจุดตั้งค่า</b></p>
       </div>
-
       <div class="text-center">
-        <button class="btn-refresh" onclick="getLocationAndCalculate()">🔄 อัปเดตพิกัดใหม่อีกครั้ง</button>
+        <button class="btn-refresh" onclick="getLocationAndCalculate()">🔄 รีเฟรชจับพิกัดใหม่อีกครั้ง</button>
       </div>
     </div>
 
-    <button id="btnCheckIn" class="btn-checkin" disabled onclick="submitAttendance()">⏰ บันทึกเวลาเรียน (มาเรียน)</button>
-
+    <button id="btnCheckIn" class="btn-checkin" disabled onclick="submitAttendance()">⏰ บันทึกข้อมูลลงเวลา</button>
   </div>
 
   <script>
-    // ⚠️ นำ Web App URL ของคุณมาใส่ตรงนี้เหมือนในหน้า index.html
+    // 🌟 อัปเดตใช้ URL ตัวใหม่ล่าสุดของคุณแล้วเรียบร้อย 🌟
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
     const LIFF_ID = "2010176412-U51gEMNp";
 
-    // ค่าพิกัดโรงเรียนและระยะทางสูงสุดที่อนุญาตจากไฟล์ Settings.csv
-    const SCHOOL_LAT = 19.677237;
-    const SCHOOL_LNG = 99.85024;
-    const MAX_DIST = 100; // รัศมี 100 เมตร
+    let schoolLat = null;
+    let schoolLng = null;
+    let maxDistanceAllowed = 100;
 
     let userProfile = null;
-    let studentData = null;
-    let currentLat = null;
-    let currentLng = null;
+    let localUserData = null;
     let isWithinRange = false;
 
     async function main() {
@@ -182,125 +93,161 @@
         await liff.init({ liffId: LIFF_ID });
         if (liff.isLoggedIn()) {
           userProfile = await liff.getProfile();
-          if (userProfile.pictureUrl) {
-            document.getElementById('stu-line-img').src = userProfile.pictureUrl;
-          }
-          // โหลดข้อมูลนักเรียนจาก LINE ID
-          await fetchStudentProfile();
+          if (userProfile.pictureUrl) document.getElementById('user-line-img').src = userProfile.pictureUrl;
+          await loadConfigAndUser();
         } else {
           liff.login();
         }
       } catch (err) {
-        showError('LIFF Init Error: ' + err.message);
+        showError('LIFF Error: ' + err.message);
       }
     }
 
-    // ดึงข้อมูลโปรไฟล์นักเรียนจากระบบฐานข้อมูล Sheets ผ่าน LINE ID
-    async function fetchStudentProfile() {
+    // ฟังก์ชันโหลดค่าคอนฟิกและโปรไฟล์
+    async function loadConfigAndUser() {
       try {
         const response = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'getStudentInfo', userId: userProfile.userId })
+          body: JSON.stringify({ action: 'getSettingsAndUser', userId: userProfile.userId })
         });
-        const data = await response.json();
+        const result = await response.json();
         
-        if (data.success) {
-          studentData = data.student;
-          document.getElementById('stu-name').innerText = studentData.name;
-          document.getElementById('stu-id').innerText = studentData.id;
-          document.getElementById('stu-class').innerText = studentData.class || 'ไม่ระบุ';
+        if (result.success) {
+          // 1. นำข้อมูลจาก Settings หน้าชีตมาตั้งค่าในแอป
+          schoolLat = result.settings.schoolLat;
+          schoolLng = result.settings.schoolLng;
+          maxDistanceAllowed = result.settings.maxDist;
           
-          // เมื่อได้ข้อมูลนักเรียนแล้ว ให้ทำการตรวจสอบพิกัดต่อทันที
+          document.getElementById('target-geo-text').innerText = `${schoolLat}, ${schoolLng}`;
+          document.getElementById('rule-text').innerText = `ต้องอยู่ภายในรัศมี ${maxDistanceAllowed} เมตร`;
+
+          // 2. จัดการแสดงโปรไฟล์ตามเงื่อนไขที่ผู้ใช้งานต้องการ
+          localUserData = result.user;
+          renderProfileDOM(localUserData);
+
+          // 3. เริ่มเรียกใช้ฟังก์ชันระบุพิกัด GPS ทันที
           getLocationAndCalculate();
         } else {
-          showError('ไม่สิทธิ์เข้าใช้งานหน้านี้เฉพาะนักเรียนที่ลงทะเบียนแล้วเท่านั้น');
-          setTimeout(() => { liff.closeWindow(); }, 3000);
+          showError(result.message || 'ไม่พบรายชื่อของคุณในสิทธิ์การใช้งานฐานข้อมูล');
         }
       } catch (err) {
-        showError('ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้');
+        showError('เชื่อมต่อฐานข้อมูลไม่สำเร็จ กรุณาตรวจสอบการตั้งค่าหลังบ้าน');
       }
     }
 
-    // ฟังก์ชันดึงพิกัดจาก GPS เครื่องโทรศัพท์
+    // ฟังก์ชันแยกเงื่อนไขการวาดโครงสร้างแสดงข้อมูลตามเงื่อนไขของแต่ละสิทธิ์
+    function renderProfileDOM(user) {
+      const zone = document.getElementById('profile-info-zone');
+      let htmlContent = "";
+
+      if (user.role === 'student') {
+        // นักเรียน -> แสดงคำนำหน้า ชื่อ นามสกุล ชั้น
+        htmlContent = `
+          <h3>${user.prefix}${user.name} ${user.surname}</h3>
+          <p>สถานะ: <b>นักเรียน</b> (รหัส: ${user.id})</p>
+          <p>ระดับชั้นเรียน: <b style="color:#00B900;">ชั้น ${user.className || 'ไม่ระบุ'}</b></p>
+        `;
+      } else if (user.role === 'teacher') {
+        // ครู -> แสดงคำนำหน้า ชื่อ นามสกุล
+        htmlContent = `
+          <h3>${user.prefix}${user.name} ${user.surname}</h3>
+          <p>สถานะ: <b>ครู / บุคลากร</b> (รหัส: ${user.id})</p>
+        `;
+      } else if (user.role === 'parent') {
+        // ผู้ปกครอง -> แสดงคำนำหน้า ชื่อ นามสกุล ของผู้ปกครอง และ เด็ก (คำนำหน้า ชื่อ นามสกุล ชั้น)
+        htmlContent = `
+          <h3>ผู้ปกครอง: ${user.prefix}${user.name} ${user.surname}</h3>
+          <p>สถานะ: <b>ผู้ปกครอง</b> (รหัส: ${user.id})</p>
+          <hr>
+          <p style="margin: 0 0 5px 0; font-size:12px; color:#e67e22; font-weight:bold;">👶 ข้อมูลบุตรหลานในความดูแล:</p>
+          <h3>นักเรียน: ${user.child.prefix}${user.child.name} ${user.child.surname}</h3>
+          <p>ระดับชั้นเรียน: <b style="color:#e67e22;">ชั้น ${user.child.className || '-'}</b></p>
+        `;
+      }
+      zone.innerHTML = htmlContent;
+    }
+
+    // 🛠️ กลไกแก้ปัญหาอาการค้าง: จับสัญญาณ HighAccuracy แบบจำกัดเวลา หากหน่วงหรือค้างจะดึงพิกัดแบบทั่วไปแทนอัตโนมัติ
     function getLocationAndCalculate() {
-      showLoading('กำลังค้นหาสัญญาณพิกัด GPS...');
+      showLoading('กำลังประมวลผลจับพิกัดดาวเทียม GPS...');
       
       if (!navigator.geolocation) {
         hideLoading();
-        updateLocationUI(false, "เบราว์เซอร์ไม่รองรับ GPS");
+        updateLocationUI(false, "เบราว์เซอร์ไม่รองรับ GPS", "danger");
         return;
       }
 
+      // ตั้งเงื่อนไขค้นหาพิกัดละเอียดสูง จำกัดเวลาการทำงานที่ 5 วินาทีเพื่อป้องกันหน้าเว็บค้าง
+      const geoOptionsHigh = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 };
+      
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          currentLat = position.coords.latitude;
-          currentLng = position.coords.longitude;
-          
-          document.getElementById('user-geo').innerText = `${currentLat.toFixed(6)}, ${currentLng.toFixed(6)}`;
-          
-          // คำนวณระยะทางแบบ Haversine Formula
-          const distance = haversineDistance(currentLat, currentLng, SCHOOL_LAT, SCHOOL_LNG);
-          document.getElementById('distance-text').innerText = `${Math.round(distance)} เมตร`;
-          
-          // ตรวจสอบเงื่อนไขรัศมีโรงเรียน 100 เมตร
-          if (distance <= MAX_DIST) {
-            isWithinRange = true;
-            updateLocationUI(true, "✅ อยู่ในพื้นที่โรงเรียน", "success");
-            document.getElementById('btnCheckIn').disabled = false;
-          } else {
-            isWithinRange = false;
-            updateLocationUI(false, "❌ อยู่นอกพื้นที่โรงเรียน", "danger");
-            document.getElementById('btnCheckIn').disabled = true;
-          }
-          hideLoading();
-        },
-        (error) => {
-          hideLoading();
-          let msg = "ไม่สามารถเข้าถึงตำแหน่งได้";
-          if (error.code === 1) msg = "⚠️ โปรดอนุญาตสิทธิ์เข้าถึงตำแหน่ง (GPS)";
-          else if (error.code === 2) msg = "⚠️ สัญญาณ GPS ขัดข้อง";
-          else if (error.code === 3) msg = "⚠️ หมดเวลาค้นหาตำแหน่ง";
-          
-          updateLocationUI(false, msg, "danger");
-          document.getElementById('btnCheckIn').disabled = true;
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        handleGeoSuccess, 
+        (err) => {
+          console.warn("High accuracy timed out or failed. Switching to standard fallback location...");
+          // Fallback: สลับไปใช้ความแม่นยำทั่วไปใน 5 วินาทีทันที เพื่อไม่ให้หน้าเว็บหยุดนิ่ง
+          navigator.geolocation.getCurrentPosition(handleGeoSuccess, handleGeoError, { enableHighAccuracy: false, timeout: 5000 });
+        }, 
+        geoOptionsHigh
       );
     }
 
-    // สูตรคำนวณระยะทางระหว่างจุดพิกัด 2 จุด (หน่วยเป็นเมตร)
-    function haversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // รัศมีโลกเฉลี่ยเป็นเมตร
-      const dLat = deg2rad(lat2 - lat1);
-      const dLon = deg2rad(lon2 - lon1);
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c; // คืนค่าเป็นเมตร
+    function handleGeoSuccess(position) {
+      const uLat = position.coords.latitude;
+      const uLng = position.coords.longitude;
+      
+      document.getElementById('user-geo-text').innerText = `${uLat.toFixed(6)}, ${uLng.toFixed(6)}`;
+      
+      // คำนวณความห่างเทียบพิกัดจากชีต Settings
+      const distance = haversineDistance(uLat, uLng, schoolLat, schoolLng);
+      document.getElementById('distance-text').innerText = `${Math.round(distance)} เมตร`;
+      
+      if (distance <= maxDistanceAllowed) {
+        isWithinRange = true;
+        updateLocationUI(true, "✅ พิกัดของคุณอยู่ภายในเขตโรงเรียนเรียบร้อย", "success");
+        document.getElementById('btnCheckIn').disabled = false;
+      } else {
+        isWithinRange = false;
+        updateLocationUI(false, "❌ คุณอยู่นอกพื้นที่ขอบเขตของโรงเรียน", "danger");
+        document.getElementById('btnCheckIn').disabled = true;
+      }
+      hideLoading();
     }
 
-    function deg2rad(deg) { return deg * (Math.PI/180); }
+    function handleGeoError(error) {
+      hideLoading();
+      let alertMsg = "ไม่สามารถระบุพิกัดตำแหน่งได้";
+      if (error.code === 1) alertMsg = "⚠️ โปรดเปิดสิทธิ์อนุมัติ 'เข้าถึงตำแหน่งพิกัด' บนหน้าเว็บบนมือถือ";
+      else if (error.code === 2) alertMsg = "⚠️ ไม่สามารถติดต่อสัญญาณ GPS ได้ (โปรดตรวจสอบการเปิด GPS บนเครื่อง)";
+      else if (error.code === 3) alertMsg = "⚠️ หมดเวลาเชื่อมสัญญาณพิกัด กรุณากดรีเฟรชลองใหม่อีกครั้ง";
+      
+      updateLocationUI(false, alertMsg, "danger");
+      document.getElementById('btnCheckIn').disabled = true;
+    }
 
-    // อัปเดต UI หน้าตา Badge สถานะพื้นที่
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; 
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
     function updateLocationUI(status, text, styleClass) {
       const badge = document.getElementById('location-status-badge');
       badge.innerText = text;
-      badge.className = "status-badge"; // reset
-      if (styleClass === "success") badge.classList.add('status-success');
-      else if (styleClass === "danger") badge.classList.add('status-danger');
-      else badge.classList.add('status-warning');
+      badge.className = "status-badge " + (styleClass === "success" ? "status-success" : styleClass === "danger" ? "status-danger" : "status-warning");
     }
 
-    // ฟังก์ชันส่งบันทึกการเช็คชื่อเข้าชีต Attendance
     async function submitAttendance() {
-      if (!isWithinRange) return alert('คุณอยู่นอกเขตโรงเรียน ไม่สามารถลงชื่อได้');
+      if (!isWithinRange) return alert('พิกัดอยู่นอกขอบเขตที่โรงเรียนกำหนด ไม่สามารถทำรายการได้ครับ');
       
       const btn = document.getElementById('btnCheckIn');
-      btn.innerText = "⏳ กำลังบันทึกเวลาเรียน...";
+      btn.innerText = "⏳ กำลังบันทึกข้อมูลเวลาลงฐานข้อมูล...";
       btn.disabled = true;
-      showLoading('กำลังส่งข้อมูลลงบันทึกเวลา...');
+      showLoading('กำลังส่งข้อมูลประวัติเข้าสู่หน้าชีต Attendance...');
+
+      let roleThai = localUserData.role === 'student' ? 'นักเรียน' : localUserData.role === 'teacher' ? 'ครู' : 'ผู้ปกครอง';
 
       try {
         const response = await fetch(GAS_URL, {
@@ -308,26 +255,25 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'checkIn',
-            studentId: studentData.id,
-            studentName: studentData.name
+            roleId: localUserData.id,
+            roleText: roleThai
           })
         });
         const data = await response.json();
         hideLoading();
 
         if (data.success) {
-          alert('🎉 บันทึกเวลาเรียน (มาเรียน) สำเร็จเรียบร้อยแล้วค่ะ!');
-          // ปิดหน้าต่าง LIFF ทันทีเมื่อเสร็จงาน
+          alert(`🎉 บันทึกเวลาสำเร็จเรียบร้อยแล้วค่ะ!`);
           liff.closeWindow();
         } else {
-          alert('เกิดข้อผิดพลาด: ' + data.message);
-          btn.innerText = "⏰ บันทึกเวลาเรียน (มาเรียน)";
+          alert('ข้อผิดพลาดจากระบบ: ' + data.message);
+          btn.innerText = "⏰ บันทึกข้อมูลลงเวลา";
           btn.disabled = false;
         }
       } catch (err) {
         hideLoading();
-        alert('เชื่อมต่อฐานข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง');
-        btn.innerText = "⏰ บันทึกเวลาเรียน (มาเรียน)";
+        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย กรุณาลองใหม่อีกครั้ง');
+        btn.innerText = "⏰ บันทึกข้อมูลลงเวลา";
         btn.disabled = false;
       }
     }
@@ -336,16 +282,11 @@
       document.getElementById('loading-overlay').classList.remove('hidden');
       document.getElementById('loading-text').innerText = text;
     }
-
-    function hideLoading() {
-      document.getElementById('loading-overlay').classList.add('hidden');
-    }
-
+    function hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
     function showError(text) {
       hideLoading();
-      const badge = document.getElementById('location-status-badge');
-      badge.innerText = text;
-      badge.className = "status-badge status-danger";
+      document.getElementById('location-status-badge').innerText = text;
+      document.getElementById('location-status-badge').className = "status-badge status-danger";
     }
 
     main();
