@@ -18,13 +18,18 @@
     .status-group { display: flex; gap: 5px; }
     .status-btn { border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; background: white; font-weight: 600; }
     
-    /* สีคีย์สถานะเปิดใช้งาน */
+    /* สไตล์ปุ่มสถานะ */
     .btn-present.active { background-color: #10b981; color: white; border-color: #10b981; }
     .btn-sick.active { background-color: #f59e0b; color: white; border-color: #f59e0b; }
     .btn-leave.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
     .btn-absent.active { background-color: #ef4444; color: white; border-color: #ef4444; }
 
-    .nav-btn { display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-top: 10px; text-align: center; font-size: 14px; }
+    /* Badge สถานะห้องเรียน */
+    .room-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 8px; }
+    .badge-success { background-color: #e8f8f5; color: #2ecc71; border: 1px solid #2ecc71; }
+    .badge-danger { background-color: #fdedec; color: #e74c3c; border: 1px solid #e74c3c; }
+
+    .nav-btn { display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; text-align: center; font-size: 14px; }
     .submit-btn { width: 100%; padding: 14px; background-color: #1e3a8a; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 10px; }
     #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; font-weight: bold; z-index: 1000; }
     .hidden { display: none !important; }
@@ -38,13 +43,15 @@
     <div class="header-card">
       <h3 style="margin:0; font-size: 14px; opacity: 0.8;">ระบบบริหารจัดการคุณครู</h3>
       <h1 id="teacher-name" style="margin:5px 0 0 0; font-size: 20px;">คุณครูประจำชั้น</h1>
-      <p id="teacher-class" style="margin: 5px 0 0 0; font-size: 14px; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 20px;">ห้อง:กำลังโหลด...</p>
+      <p id="teacher-class" style="margin: 5px 0 0 0; font-size: 14px; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 20px;">ห้อง: กำลังโหลด...</p>
+      <div id="check-status-zone">
+        </div>
       <br>
       <a href="summary.html" class="nav-btn">📊 ดูสรุปสถิติการมาเรียนภาพรวมโรงเรียน</a>
     </div>
 
     <div class="card">
-      <h2>✍️ บันทึกตารางเช็คชื่อเข้าชั้นเรียน <span style="font-size:12px; color:#6b7280;">(เลือกปรับเปลี่ยนได้รายบุคคล)</span></h2>
+      <h2>✍️ บันทึกตารางเช็คชื่อเข้าชั้นเรียน</h2>
       <div id="student-list-container">
         </div>
     </div>
@@ -85,6 +92,14 @@
           document.getElementById('teacher-name').innerText = `${result.teacher.prefix}${result.teacher.name} ${result.teacher.surname}`;
           document.getElementById('teacher-class').innerText = `ห้องที่คุณครูดูแล: ชั้น ${result.teacher.assignedClass}`;
           
+          // เรนเดอร์สถานะภาพรวมของห้องเรียน
+          const statusZone = document.getElementById('check-status-zone');
+          if (result.isCheckedToday) {
+            statusZone.innerHTML = `<span class="room-badge badge-success">🟢 เช็คชื่อเรียบร้อยแล้ววันนี้</span>`;
+          } else {
+            statusZone.innerHTML = `<span class="room-badge badge-danger">🔴 ยังไม่ได้เช็คชื่อวันนี้</span>`;
+          }
+
           studentArray = result.students;
           renderStudentList(studentArray);
         } else {
@@ -102,36 +117,39 @@
         return;
       }
 
-      container.innerHTML = students.map((stu, index) => `
-        <div class="student-row" data-id="${stu.id}">
-          <div class="student-info">
-            <div><b>${index + 1}. ${stu.prefix}${stu.name} ${stu.surname}</b></div>
-            <div class="student-id">รหัสประจำตัว: ${stu.id} (${stu.gender})</div>
+      let htmlHtml = "";
+      students.forEach((stu, index) => {
+        let isPresent = stu.currentStatus === 'มาเรียน' ? 'active' : '';
+        let isSick = stu.currentStatus === 'ป่วย' ? 'active' : '';
+        let isLeave = stu.currentStatus === 'ลา' ? 'active' : '';
+        let isAbsent = stu.currentStatus === 'ขาด' ? 'active' : '';
+
+        htmlHtml += `
+          <div class="student-row" data-id="${stu.id}">
+            <div class="student-info">
+              <div><b>${index + 1}. ${stu.prefix}${stu.name} ${stu.surname}</b></div>
+              <div class="student-id">รหัสประจำตัว: ${stu.id} (${stu.gender})</div>
+            </div>
+            <div class="status-group">
+              <button class="status-btn btn-present ${isPresent}" onclick="setStatus('${stu.id}', 'มาเรียน', this)">มา</button>
+              <button class="status-btn btn-sick ${isSick}" onclick="setStatus('${stu.id}', 'ป่วย', this)">ป่วย</button>
+              <button class="status-btn btn-leave ${isLeave}" onclick="setStatus('${stu.id}', 'ลา', this)">ลา</button>
+              <button class="status-btn btn-absent ${isAbsent}" onclick="setStatus('${stu.id}', 'ขาด', this)">ขาด</button>
+            </div>
           </div>
-          <div class="status-group">
-            <button class="status-btn btn-present active" onclick="setStatus('${stu.id}', 'มาเรียน', this)">มา</button>
-            <button class="status-btn btn-sick" onclick="setStatus('${stu.id}', 'ป่วย', this)">ป่วย</button>
-            <button class="status-btn btn-leave" onclick="setStatus('${stu.id}', 'ลา', this)">ลา</button>
-            <button class="status-btn btn-absent" onclick="setStatus('${stu.id}', 'ขาด', this)">ขาด</button>
-          </div>
-        </div>
-      `).join('');
-      
-      // เก็บสถานะเริ่มต้นคือ 'มาเรียน' ไว้ใน Array Object ของทุกคน
-      students.forEach(stu => stu.currentStatus = 'มาเรียน');
+        `;
+      });
+      container.innerHTML = htmlHtml;
     }
 
     function setStatus(studentId, status, element) {
-      // ปรับปรุงค่าสถานะในตัวแปรระบบ
       let student = studentArray.find(s => s.id === studentId);
-      if (student) student.currentStatus = status;
-
-      // จัดการเคลียร์สไตล์ปุ่มเดิมรอบข้าง
+      if (student) {
+        student.currentStatus = status;
+      }
       const row = element.parentElement;
       const buttons = row.querySelectorAll('.status-btn');
       buttons.forEach(btn => btn.classList.remove('active'));
-      
-      // ใส่สไตล์ active ลงปุ่มที่ถูกกด
       element.classList.add('active');
     }
 
@@ -154,6 +172,8 @@
 
         if (res.success) {
           alert('🎉 บันทึกรายชื่อและการเข้าเรียนของนักเรียนในห้องเสร็จสมบูรณ์!');
+          // อัปเดตตราวัดสถานะทันทีแบบไม่ต้องรีโหลดหน้าเว็บ
+          document.getElementById('check-status-zone').innerHTML = `<span class="room-badge badge-success">🟢 เช็คชื่อเรียบร้อยแล้ววันนี้</span>`;
         } else {
           alert('ล้มเหลว: ' + res.message);
         }
