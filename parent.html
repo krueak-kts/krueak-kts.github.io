@@ -6,7 +6,8 @@
     <title>ระบบผู้ปกครอง (Parent Portal)</title>
     <script src="https://cdn.tailwindcss.com/"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght=300;400;600;700&display=swap" rel="stylesheet">
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Sarabun', sans-serif; background-color: #F8FAFC; }
         @media print {
@@ -27,7 +28,7 @@
     <div class="no-print bg-gradient-to-r from-indigo-600 to-blue-500 p-6 rounded-3xl text-white shadow-lg mb-4 flex justify-between items-center">
         <div>
             <p class="text-indigo-100 text-sm">ยินดีต้อนรับผู้ปกครอง</p>
-            <h2 id="parentName" class="text-xl font-bold mt-1">กำลังโหลดข้อมูลผู้ปกครอง...</h2>
+            <h2 id="parentName" class="text-xl font-bold mt-1">กำลังตรวจสอบข้อมูล...</h2>
         </div>
         <div>
             <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow transition">ออกจากระบบ</button>
@@ -58,24 +59,60 @@
     </div>
 
     <script>
-        // ใช้ URL เว็บแอปพลิเคชันจากระบบหลักของคุณครู
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwM0qHkMQiQNABD1x6HdN8dw24WWof0EoRXd6VTaxHaGvfQjcMcsbIdbJHODVLHpZjO/exec"; 
-        const user = JSON.parse(localStorage.getItem('schoolUserData'));
+        const LIFF_ID = "2010176412-U51gEMNp"; // รหัส LIFF ID ของคุณ
+        
+        // รับค่ามา ถ้าเป็น null ให้เป็น Object ว่างไว้ก่อน
+        let user = JSON.parse(localStorage.getItem('schoolUserData')) || {};
         let currentMode = 'daily';
         
         async function init() {
-            if(!user) return location.replace('index.html');
-            // แสดงชื่อผู้ปกครองที่เข้าสู่ระบบ
-            document.getElementById('parentName').innerText = `คุณ ${user.name || 'ผู้ปกครอง'}`;
-            
+            // โชว์ชื่อก่อนถ้ามี
+            if(user.name) {
+                document.getElementById('parentName').innerText = `คุณ ${user.name}`;
+            }
+
+            // ✅ ถ้ารหัส ID หายไป (เป็น undefined) ระบบจะดึงผ่าน LIFF อัตโนมัติ!
+            if (!user.id) {
+                document.getElementById('tableContainer').innerHTML = '<p class="text-center py-10 text-indigo-600 font-bold animate-pulse no-print">กำลังยืนยันตัวตนกับระบบ LINE...</p>';
+                try {
+                    await liff.init({ liffId: LIFF_ID });
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                        return;
+                    }
+                    const profile = await liff.getProfile();
+                    
+                    // ขอข้อมูลใหม่จากหลังบ้านด้วย LINE ID
+                    const res = await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "getSettingsAndUser", userId: profile.userId })
+                    });
+                    const data = await res.json();
+                    
+                    if (data.success && data.user && data.user.role === 'parent') {
+                        user = data.user; 
+                        localStorage.setItem('schoolUserData', JSON.stringify(user)); // เซฟทับให้มี ID สมบูรณ์
+                        document.getElementById('parentName').innerText = `คุณ ${user.name}`;
+                    } else {
+                        document.getElementById('tableContainer').innerHTML = '<p class="text-center py-10 text-red-500">❌ ไม่พบบัญชีผู้ปกครอง หรือยังไม่ได้ผูกบัญชี</p>';
+                        return; // หยุดการทำงานถ้าไม่ใช่ผู้ปกครอง
+                    }
+                } catch (err) {
+                    console.error("LIFF Error:", err);
+                    document.getElementById('tableContainer').innerHTML = '<p class="text-center py-10 text-red-500">❌ เกิดข้อผิดพลาดในการเชื่อมต่อ LINE</p>';
+                    return;
+                }
+            }
+
+            // ถ้ามี user.id ครบถ้วนแล้ว สั่งให้เริ่มโหลดข้อมูล
             const d = new Date();
             document.getElementById('datePicker').value = toLocalISODate(d);
-            setMode('daily');
+            setMode('daily'); 
         }
 
         function setMode(mode) {
             currentMode = mode;
-            // ไฮไลต์เลือกปุ่มเมนู
             ['Daily', 'Weekly', 'Monthly', 'Summary'].forEach(m => {
                 const btn = document.getElementById('btn' + m);
                 if(btn) {
@@ -85,7 +122,6 @@
                 }
             });
 
-            // ซ่อนหรือแสดงแถบเลือกวันที่ตามความเหมาะสมของโหมด
             const datePicker = document.getElementById('datePicker');
             if(mode === 'summary') {
                 datePicker.classList.add('hidden');
@@ -117,7 +153,6 @@
                 start = new Date(d.getFullYear(), d.getMonth(), 1); 
                 end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
             } else {
-                // โหมดสรุปทั้งหมด ดึงข้อมูลย้อนหลังครอบคลุมทั้งปีการศึกษา (มกราคม - ธันวาคม ของปีที่เลือก)
                 start = new Date(d.getFullYear(), 0, 1);
                 end = new Date(d.getFullYear(), 11, 31);
             }
@@ -125,6 +160,8 @@
         }
 
         async function fetchData() {
+            if (!user || !user.id) return; // ป้องกันการเรียกข้อมูลหากยังไม่ได้ ID
+
             const range = getDateRange();
             const dArr = document.getElementById('datePicker').value.split('-');
             
@@ -138,13 +175,12 @@
             container.innerHTML = '<p class="text-center py-10 text-indigo-600 font-bold animate-pulse no-print">กำลังดึงข้อมูลสถิติของบุตรหลาน...</p>';
             
             try {
-                // ส่ง Payload โดยระบุ type: "parent" และพ่วง parentId จาก ID บัญชีผู้ปกครองไปตรวจสอบที่สคริปต์
                 const res = await fetch(GAS_URL, { 
                     method: 'POST', 
                     body: JSON.stringify({ 
                         action: "getHistory", 
                         type: "parent", 
-                        parentId: user.id, 
+                        parentId: user.id, // ตอนนี้ระบบมั่นใจได้ 100% ว่า user.id ไม่ใช่ค่าว่าง
                         startDate: range.start, 
                         endDate: range.end 
                     }) 
@@ -160,7 +196,6 @@
                     return;
                 }
 
-                // แยกฟังก์ชันการวาด UI ตามโหมดงาน
                 if (currentMode === 'summary') {
                     renderSummaryView(data.students, data.records);
                 } else {
@@ -178,7 +213,6 @@
             return '<span class="text-gray-300">-</span>';
         }
 
-        // ฟังก์ชันวาดตารางโหมด รายวัน / รายสัปดาห์ / รายเดือน
         function renderTableView(students, records, startStr, endStr) {
             const container = document.getElementById('tableContainer');
             
@@ -212,7 +246,6 @@
                     </tr>`;
                 });
             } else {
-                // โหมดรายสัปดาห์ และ รายเดือน
                 const dates = []; 
                 let curr = new Date(startStr.split('-')[0], startStr.split('-')[1]-1, startStr.split('-')[2]); 
                 const end = new Date(endStr.split('-')[0], endStr.split('-')[1]-1, endStr.split('-')[2]);
@@ -254,7 +287,6 @@
             container.innerHTML = html;
         }
 
-        // ฟังก์ชันวาดโหมดวิเคราะห์และสรุปสถิติสะสม (Summary Dashboard View)
         function renderSummaryView(students, records) {
             const container = document.getElementById('tableContainer');
             let html = '<div class="space-y-6 py-2">';
@@ -323,6 +355,7 @@
 
         function logout() {
             localStorage.removeItem('schoolUserData');
+            liff.logout();
             location.replace('index.html');
         }
 
