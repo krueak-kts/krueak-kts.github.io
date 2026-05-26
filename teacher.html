@@ -8,31 +8,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; margin: 0; padding: 15px; }
-    .container { max-width: 600px; margin: 0 auto; }
-    .header-card { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
-    h2 { margin-top: 0; font-size: 18px; color: #1f2937; display: flex; justify-content: space-between; align-items: center; }
-    .student-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
-    .student-info { font-size: 15px; color: #374151; }
-    .student-id { font-size: 12px; color: #9ca3af; }
-    .status-group { display: flex; gap: 5px; }
-    .status-btn { border: 1px solid #d1d5db; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; background: white; font-weight: 600; }
+    .container { max-width: 800px; margin: 0 auto; }
     
-    /* สไตล์ปุ่มสถานะ */
-    .btn-present.active { background-color: #10b981; color: white; border-color: #10b981; }
-    .btn-sick.active { background-color: #f59e0b; color: white; border-color: #f59e0b; }
-    .btn-leave.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
-    .btn-absent.active { background-color: #ef4444; color: white; border-color: #ef4444; }
-
-    /* Badge สถานะห้องเรียน */
-    .room-badge { display: inline-block; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 14px; margin-top: 8px; }
-    .badge-success { background-color: #e8f8f5; color: #2ecc71; border: 1px solid #2ecc71; }
-    .badge-danger { background-color: #fdedec; color: #e74c3c; border: 1px solid #e74c3c; }
-
-    .nav-btn { display: inline-block; background-color: #10b981; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; margin-top: 15px; text-align: center; font-size: 14px; }
-    .submit-btn { width: 100%; padding: 14px; background-color: #1e3a8a; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 10px; }
-    #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; font-weight: bold; z-index: 1000; }
+    .header-card { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 15px; }
+    h2 { margin-top: 0; font-size: 18px; color: #1f2937; }
+    
+    /* สไตล์ปุ่ม Navigation และ Controls */
+    .nav-btn { display: inline-block; background-color: #ffffff; color: #10b981; text-decoration: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .control-bar { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+    .tab-group { display: flex; gap: 5px; flex: 1; min-width: 250px; }
+    .tab-btn { flex: 1; padding: 8px; text-align: center; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; font-family: 'Sarabun'; font-size: 14px; transition: 0.2s; background: #f1f5f9; color: #475569; }
+    .tab-btn.active { background: #10b981; color: white; }
+    .date-picker { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Sarabun'; outline: none; flex: 1; min-width: 150px; }
+    
+    /* สไตล์ตาราง */
+    .table-responsive { overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; white-space: nowrap; }
+    thead th { background-color: #f0fdf4; color: #15803d; padding: 12px; border-bottom: 2px solid #bbf7d0; text-align: center; }
+    tbody td { padding: 10px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #f1f5f9; }
+    tbody tr:hover { background-color: #f8fafc; }
+    .sticky-col { position: sticky; left: 0; background-color: white; z-index: 1; border-right: 2px solid #e2e8f0; font-weight: bold; color: #334155; }
+    th.sticky-col { background-color: #f0fdf4; z-index: 2; }
+    
+    select.status-select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #cbd5e1; outline: none; font-family: 'Sarabun'; font-size: 14px; }
+    
+    /* ป้ายสถานะ */
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+    .badge-check { background-color: #dcfce7; color: #166534; }
+    .badge-wait { background-color: #fef9c3; color: #854d0e; }
+    
+    .submit-btn { width: 100%; padding: 14px; background-color: #10b981; color: white; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 10px; }
+    .submit-btn:active { transform: scale(0.98); }
+    
+    #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; font-weight: bold; z-index: 1000; font-size: 16px; }
     .hidden { display: none !important; }
+    .text-center { text-align: center; }
   </style>
 </head>
 <body>
@@ -41,35 +52,52 @@
 
   <div class="container">
     <div class="header-card">
-      <h3 style="margin:0; font-size: 14px; opacity: 0.8;">ระบบบริหารจัดการคุณครู</h3>
-      <h1 id="teacher-name" style="margin:5px 0 0 0; font-size: 20px;">คุณครูประจำชั้น</h1>
-      <p id="teacher-class" style="margin: 5px 0 0 0; font-size: 14px; background: rgba(255,255,255,0.2); display: inline-block; padding: 3px 10px; border-radius: 20px;">ห้อง: กำลังโหลด...</p>
-      <div id="check-status-zone">
-        </div>
-      <br>
-      <a href="summary.html" class="nav-btn">📊 ดูสรุปสถิติการมาเรียนภาพรวมโรงเรียน</a>
+      <div>
+        <p style="margin: 0; font-size: 13px; opacity: 0.8;">ครูที่ปรึกษาชั้น: <span id="teacher-class" style="font-weight: bold; font-size: 16px;">กำลังโหลด...</span></p>
+        <h1 id="teacher-name" style="margin: 5px 0 0 0; font-size: 20px;">คุณครู...</h1>
+      </div>
+      <div>
+        <a href="summary.html" class="nav-btn">📊 สรุปภาพรวมโรงเรียน</a>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>✍️ บันทึกตารางเช็คชื่อเข้าชั้นเรียน</h2>
-      <div id="student-list-container">
+    <div class="card control-bar">
+      <div class="tab-group">
+        <button id="btnDaily" onclick="setMode('daily')" class="tab-btn active">รายวัน</button>
+        <button id="btnWeekly" onclick="setMode('weekly')" class="tab-btn">รายสัปดาห์</button>
+        <button id="btnMonthly" onclick="setMode('monthly')" class="tab-btn">รายเดือน</button>
+      </div>
+      <input type="date" id="datePicker" class="date-picker" onchange="fetchData()">
+    </div>
+
+    <div class="card table-responsive">
+      <div id="tableContainer">
         </div>
     </div>
 
-    <button class="submit-btn" onclick="saveAllAttendance()">💾 ยืนยันบันทึกเวลาเรียนนักเรียนทั้งหมด</button>
+    <div id="saveActionArea" class="hidden">
+      <button class="submit-btn" onclick="saveBulkAttendance()">💾 ยืนยันบันทึกเวลาเรียนนักเรียนทั้งหมด</button>
+      <p style="text-align: center; font-size: 12px; color: #64748b; margin-top: 10px;">* ระบบจะบันทึกสถานะตามที่เลือกไว้ในช่อง "บันทึก / แก้ไข" เข้าสู่ฐานข้อมูล</p>
+    </div>
   </div>
 
   <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
     const LIFF_ID = "2010176412-U51gEMNp";
-    let studentArray = [];
+    
+    let currentMode = 'daily';
+    let currentStudents = [];
+    let currentRecords = [];
+    let teacherProfile = null;
+    let lineUserId = null;
 
     async function main() {
       try {
         await liff.init({ liffId: LIFF_ID });
         if (liff.isLoggedIn()) {
           const profile = await liff.getProfile();
-          loadClassRoom(profile.userId);
+          lineUserId = profile.userId;
+          initControls();
         } else {
           liff.login();
         }
@@ -78,108 +106,212 @@
       }
     }
 
-    async function loadClassRoom(userId) {
+    function initControls() {
+      const d = new Date();
+      document.getElementById('datePicker').value = toLocalISODate(d);
+      setMode('daily');
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      ['daily','weekly','monthly'].forEach(m => {
+        const btn = document.getElementById('btn' + m.charAt(0).toUpperCase() + m.slice(1));
+        if (m === mode) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+      document.getElementById('saveActionArea').classList.toggle('hidden', mode !== 'daily');
+      fetchData();
+    }
+
+    function toLocalISODate(d) { 
+      return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'); 
+    }
+
+    function getDateRange() {
+      const parts = document.getElementById('datePicker').value.split('-');
+      const d = new Date(parts[0], parts[1] - 1, parts[2]); 
+      let start, end;
+      if (currentMode === 'daily') { 
+        start = new Date(d); end = new Date(d); 
+      } else if (currentMode === 'weekly') {
+        const day = d.getDay(); 
+        const diff = d.getDate() - day; 
+        start = new Date(d.setDate(diff)); 
+        end = new Date(start); 
+        end.setDate(end.getDate() + 6);
+      } else {
+        start = new Date(d.getFullYear(), d.getMonth(), 1); 
+        end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      }
+      return { start: toLocalISODate(start), end: toLocalISODate(end) };
+    }
+
+    async function fetchData() {
+      document.getElementById('loading').innerText = "กำลังดึงข้อมูลฐานข้อมูล...";
+      document.getElementById('loading').classList.remove('hidden');
+      
+      const range = getDateRange();
+      
       try {
         const response = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'getTeacherStudents', userId: userId })
+          body: JSON.stringify({ 
+            action: 'getTeacherStudents', 
+            userId: lineUserId,
+            startDate: range.start,
+            endDate: range.end
+          })
         });
         const result = await response.json();
         document.getElementById('loading').classList.add('hidden');
 
         if (result.success) {
-          document.getElementById('teacher-name').innerText = `${result.teacher.prefix}${result.teacher.name} ${result.teacher.surname}`;
-          document.getElementById('teacher-class').innerText = `ห้องที่คุณครูดูแล: ชั้น ${result.teacher.assignedClass}`;
+          teacherProfile = result.teacher;
+          document.getElementById('teacher-name').innerText = `${teacherProfile.prefix}${teacherProfile.name} ${teacherProfile.surname}`;
+          document.getElementById('teacher-class').innerText = `ชั้น ${teacherProfile.assignedClass}`;
           
-          // เรนเดอร์สถานะภาพรวมของห้องเรียน
-          const statusZone = document.getElementById('check-status-zone');
-          if (result.isCheckedToday) {
-            statusZone.innerHTML = `<span class="room-badge badge-success">🟢 เช็คชื่อเรียบร้อยแล้ววันนี้</span>`;
-          } else {
-            statusZone.innerHTML = `<span class="room-badge badge-danger">🔴 ยังไม่ได้เช็คชื่อวันนี้</span>`;
-          }
-
-          studentArray = result.students;
-          renderStudentList(studentArray);
+          currentStudents = result.students;
+          currentRecords = result.records;
+          renderTable(range.start, range.end);
         } else {
-          alert(result.message);
+          document.getElementById('tableContainer').innerHTML = `<p class="text-center" style="color:red;">${result.message}</p>`;
         }
       } catch (e) {
-        alert('ไม่สามารถเชื่อมต่อระบบฐานข้อมูลห้องเรียนได้');
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('tableContainer').innerHTML = `<p class="text-center" style="color:red;">ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้</p>`;
       }
     }
 
-    function renderStudentList(students) {
-      const container = document.getElementById('student-list-container');
-      if (students.length === 0) {
-        container.innerHTML = `<p style="color:gray; text-align:center;">ไม่พบรายชื่อนักเรียนในระดับชั้นนี้</p>`;
-        return;
-      }
-
-      let htmlHtml = "";
-      students.forEach((stu, index) => {
-        let isPresent = stu.currentStatus === 'มาเรียน' ? 'active' : '';
-        let isSick = stu.currentStatus === 'ป่วย' ? 'active' : '';
-        let isLeave = stu.currentStatus === 'ลา' ? 'active' : '';
-        let isAbsent = stu.currentStatus === 'ขาด' ? 'active' : '';
-
-        htmlHtml += `
-          <div class="student-row" data-id="${stu.id}">
-            <div class="student-info">
-              <div><b>${index + 1}. ${stu.prefix}${stu.name} ${stu.surname}</b></div>
-              <div class="student-id">รหัสประจำตัว: ${stu.id} (${stu.gender})</div>
-            </div>
-            <div class="status-group">
-              <button class="status-btn btn-present ${isPresent}" onclick="setStatus('${stu.id}', 'มาเรียน', this)">มา</button>
-              <button class="status-btn btn-sick ${isSick}" onclick="setStatus('${stu.id}', 'ป่วย', this)">ป่วย</button>
-              <button class="status-btn btn-leave ${isLeave}" onclick="setStatus('${stu.id}', 'ลา', this)">ลา</button>
-              <button class="status-btn btn-absent ${isAbsent}" onclick="setStatus('${stu.id}', 'ขาด', this)">ขาด</button>
-            </div>
-          </div>
-        `;
-      });
-      container.innerHTML = htmlHtml;
+    function getShortBadge(status) {
+      if(status === "มาเรียน") return '<span style="color:#16a34a; font-weight:bold; font-size:16px;">✓</span>';
+      if(status === "ลาป่วย" || status === "ลากิจ") return '<span style="color:#ea580c; font-weight:bold;">ลา</span>';
+      if(status === "ขาด") return '<span style="color:#dc2626; font-weight:bold;">ข</span>';
+      return '<span style="color:#cbd5e1;">-</span>';
     }
 
-    function setStatus(studentId, status, element) {
-      let student = studentArray.find(s => s.id === studentId);
-      if (student) {
-        student.currentStatus = status;
+    function renderTable(startStr, endStr) {
+      const container = document.getElementById('tableContainer');
+      if (currentStudents.length === 0) {
+        document.getElementById('saveActionArea').classList.add('hidden');
+        return container.innerHTML = '<p class="text-center" style="color:gray;">ไม่พบรายชื่อนักเรียนในระดับชั้นนี้</p>';
       }
-      const row = element.parentElement;
-      const buttons = row.querySelectorAll('.status-btn');
-      buttons.forEach(btn => btn.classList.remove('active'));
-      element.classList.add('active');
-    }
 
-    async function saveAllAttendance() {
-      if(!confirm('คุณครูยืนยันที่จะส่งบันทึกการเช็คชื่อทั้งหมดนี้เข้าสู่ระบบส่วนกลางใช่หรือไม่?')) return;
+      let html = '<table><thead><tr>';
+      html += '<th class="sticky-col text-center">ชื่อนักเรียน</th>';
+
+      if (currentMode === 'daily') {
+        html += '<th>สถานะในระบบ</th><th>บันทึก / แก้ไข</th></tr></thead><tbody>';
+        
+        currentStudents.forEach(s => {
+          // ค้นหาว่ามีประวัติของวันนี้หรือไม่ (startStr คือวันที่เลือก)
+          const rec = currentRecords.find(r => r.studentId === s.id && r.date === startStr);
+          const isChecked = !!rec;
+          const status = rec ? rec.status : "มาเรียน"; 
+          
+          let sysStatusHtml = isChecked 
+            ? `<span class="badge badge-check">เช็คแล้ว (${status})</span>`
+            : `<span class="badge badge-wait">ยังไม่เช็ค</span>`;
+            
+          html += `<tr>
+            <td class="sticky-col">
+              ${s.prefix}${s.name} ${s.surname}<br>
+              <span style="font-size:11px; font-weight:normal; color:#64748b;">รหัส: ${s.id}</span>
+            </td>
+            <td class="text-center">${sysStatusHtml}</td>
+            <td class="text-center">
+              <select id="status_${s.id}" class="status-select">
+                <option value="มาเรียน" ${status === 'มาเรียน' ? 'selected' : ''}>✅ มาเรียน</option>
+                <option value="ขาด" ${status === 'ขาด' ? 'selected' : ''}>❌ ขาด</option>
+                <option value="ลาป่วย" ${status === 'ลาป่วย' ? 'selected' : ''}>🤒 ลาป่วย</option>
+                <option value="ลากิจ" ${status === 'ลากิจ' ? 'selected' : ''}>📁 ลากิจ</option>
+              </select>
+            </td>
+          </tr>`;
+        });
+      } else {
+        // โหมดรายสัปดาห์ / รายเดือน
+        const dates = []; 
+        let curr = new Date(startStr); 
+        const end = new Date(endStr);
+        while (curr <= end) { dates.push(new Date(curr)); curr.setDate(curr.getDate() + 1); }
+        
+        dates.forEach(d => {
+          const dayNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+          const dayLabel = dayNames[d.getDay()];
+          const dateNum = d.getDate();
+          const isWeekend = (d.getDay() === 0 || d.getDay() === 6);
+          const bgWeekend = isWeekend ? 'background-color: #fef2f2; color: #ef4444;' : '';
+          
+          const headerContent = currentMode === 'weekly' ? `${dayLabel}<br><span style="font-size:10px; font-weight:normal;">${dateNum}</span>` : dateNum;
+          html += `<th style="${bgWeekend}">${headerContent}</th>`;
+        });
+        
+        html += '<th style="min-width:35px;">มา</th>';
+        html += '<th style="min-width:35px;">ลา/ข</th></tr></thead><tbody>';
+
+        currentStudents.forEach(s => {
+          html += `<tr><td class="sticky-col">${s.prefix}${s.name} ${s.surname}</td>`;
+          
+          let countPresent = 0; let countAbsent = 0;
+          dates.forEach(d => {
+            const dStr = toLocalISODate(d);
+            const rec = currentRecords.find(r => r.studentId === s.id && r.date === dStr);
+            if(rec) {
+              if(rec.status === 'มาเรียน') countPresent++;
+              else countAbsent++;
+            }
+            html += `<td class="text-center">${getShortBadge(rec ? rec.status : '')}</td>`;
+          });
+
+          html += `<td class="text-center font-bold" style="color:#16a34a; background:#f0fdf4;">${countPresent}</td>`;
+          html += `<td class="text-center font-bold" style="color:#dc2626; background:#fef2f2;">${countAbsent}</td>`;
+          html += '</tr>';
+        });
+      }
       
-      document.getElementById('loading').innerText = "กำลังอัปโหลดบันทึกเวลาเรียนลงระบบวิชาการ...";
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    async function saveBulkAttendance() {
+      const selectedDate = document.getElementById('datePicker').value;
+      const results = [];
+      
+      currentStudents.forEach(s => {
+        const selectEl = document.getElementById(`status_${s.id}`);
+        if(selectEl) {
+          results.push({ studentId: s.id, status: selectEl.value });
+        }
+      });
+
+      if(!confirm(`คุณยืนยันการบันทึกสถานะของนักเรียนทั้งหมด ${results.length} คน \nสำหรับวันที่ ${selectedDate} หรือไม่?`)) return;
+      
+      document.getElementById('loading').innerText = "กำลังส่งข้อมูลเข้าสู่ระบบ...";
       document.getElementById('loading').classList.remove('hidden');
 
-      let records = studentArray.map(s => ({ studentId: s.id, status: s.currentStatus }));
-
       try {
-        const response = await fetch(GAS_URL, {
+        const res = await fetch(GAS_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'submitBulkAttendance', records: records })
+          body: JSON.stringify({ 
+            action: "submitBulkAttendance", 
+            date: selectedDate, 
+            records: results 
+          })
         });
-        const res = await response.json();
-        document.getElementById('loading').classList.add('hidden');
-
-        if (res.success) {
-          alert('🎉 บันทึกรายชื่อและการเข้าเรียนของนักเรียนในห้องเสร็จสมบูรณ์!');
-          // อัปเดตตราวัดสถานะทันทีแบบไม่ต้องรีโหลดหน้าเว็บ
-          document.getElementById('check-status-zone').innerHTML = `<span class="room-badge badge-success">🟢 เช็คชื่อเรียบร้อยแล้ววันนี้</span>`;
+        const data = await res.json();
+        
+        if(data.success) {
+          alert('🎉 บันทึกข้อมูลการเช็คชื่อเข้าสู่ฐานข้อมูลสำเร็จ!');
+          fetchData(); // ดึงข้อมูลมาอัปเดตป้ายสถานะทันที
         } else {
-          alert('ล้มเหลว: ' + res.message);
+          alert('เกิดข้อผิดพลาด: ' + data.message);
+          document.getElementById('loading').classList.add('hidden');
         }
-      } catch (err) {
+      } catch (e) {
+        alert('ล้มเหลวในการเชื่อมต่อกับเซิร์ฟเวอร์');
         document.getElementById('loading').classList.add('hidden');
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย');
       }
     }
 
