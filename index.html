@@ -58,12 +58,13 @@
   </div>
 
   <script>
+    // ⚠️ สำคัญมาก: ตรวจสอบให้แน่ใจว่า GAS_URL นี้เป็นอันใหม่ล่าสุดที่คุณ Deploy แล้ว!
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyIeIcSXLuQ1zRGcCzzME-50E-MUR6T6GhqBrAdOs9AVMULugZCNyj_uywuQI4eXO9vYg/exec"; 
     const LIFF_ID = "2010176412-U51gEMNp";
     
     let userProfile = null;
     let foundUserData = null; 
-    let imageBase64Data = ""; // เก็บค่ารูปภาพโปรไฟล์ชั่วคราว
+    let imageBase64Data = ""; 
 
     async function main() {
       try {
@@ -82,7 +83,6 @@
       }
     }
 
-    // ตรวจสอบสถานะการลงทะเบียนในอดีต
     function checkUserRegistration() {
       fetch(GAS_URL, {
         method: 'POST',
@@ -107,7 +107,6 @@
       .catch(err => alert("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล"));
     }
 
-    // ส่งรหัสไปตรวจเช็คพิกัดบทบาท
     function verifyId() {
       const systemId = document.getElementById('systemId').value;
       if (!systemId) return alert('กรุณากรอกรหัสก่อนครับ');
@@ -132,13 +131,11 @@
           document.getElementById('section-confirm').classList.remove('hidden');
           document.getElementById('confirmName').innerText = data.name;
           
-          // 🔎 คัดกรองบทบาท: ถ้านักเรียนให้เปิดโซนถ่ายรูป และล็อกปุ่มลงทะเบียนไว้ก่อนจนกว่าจะถ่ายรูป
           if (data.role === 'student') {
             document.getElementById('student-photo-zone').classList.remove('hidden');
             document.getElementById('btnSubmitRegister').disabled = true; 
             document.getElementById('btnSubmitRegister').innerText = "⚠️ โปรดถ่ายรูปก่อนกดยืนยัน";
           } else {
-            // ถ้าเป็นครู หรือ ผู้ปกครอง ปิดส่วนถ่ายรูป และให้กดลงทะเบียนได้ทันที
             document.getElementById('student-photo-zone').classList.add('hidden');
             document.getElementById('btnSubmitRegister').disabled = false;
             document.getElementById('btnSubmitRegister').innerText = "✅ ใช่, ลงทะเบียนเลย";
@@ -154,7 +151,6 @@
       });
     }
 
-    // จัดการกระบวนการย่อขนาดภาพถ่ายโปรไฟล์นักเรียนและแปลงเป็น Base64
     function handleProfileImage(input) {
       const file = input.files[0];
       if (!file) return;
@@ -164,7 +160,7 @@
         const img = new Image();
         img.onload = function() {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 400; // รูปโปรไฟล์ใช้ขนาดกว้าง 400px พอครับ ประหยัดพื้นที่ไดรว์
+          const MAX_WIDTH = 400; 
           const scaleSize = MAX_WIDTH / img.width;
           canvas.width = MAX_WIDTH;
           canvas.height = img.height * scaleSize;
@@ -177,10 +173,8 @@
           previewImg.src = dataUrl;
           previewImg.style.display = 'block';
           
-          // เก็บค่ารูป Base64 ลงในตัวแปรเพื่อรอส่งไปเซิร์ฟเวอร์
           imageBase64Data = dataUrl; 
           
-          // ปลดล็อกปุ่มให้ลงทะเบียนได้
           document.getElementById('btnSubmitRegister').disabled = false;
           document.getElementById('btnSubmitRegister').innerText = "✅ ใช่, ลงทะเบียนเลย";
         }
@@ -189,7 +183,6 @@
       reader.readAsDataURL(file);
     }
 
-    // บันทึกการลงทะเบียนขั้นสุดท้าย
     function registerLine() {
       const btn = document.getElementById('btnSubmitRegister');
       btn.innerText = "⏳ กำลังลงทะเบียน...";
@@ -205,17 +198,18 @@
           systemId: foundUserData.systemId,
           userId: userProfile.userId,
           displayName: userProfile.displayName,
-          imageBase64: imageBase64Data // ส่งรูปไป (ถ้าไม่ใช่กลุ่มนักเรียน ค่าจะเป็นค่าว่าง โค้ดฝั่งเซิร์ฟเวอร์จะไม่บันทึกรูป)
+          imageBase64: imageBase64Data 
         })
       })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // ✅ 2. สร้างก้อนข้อมูลและบันทึกลง localStorage สำหรับผู้ใช้ใหม่
+          // 🌟🌟🌟 จุดสำคัญที่แก้ไข: เพิ่ม id ลงไปใน sessionData 🌟🌟🌟
           const sessionData = {
+            id: foundUserData.systemId, // 👈 บันทึกรหัสประจำตัวผู้ใช้ลงในเครื่องแล้ว!
             name: foundUserData.name,
             role: foundUserData.role,
-            assignedClass: foundUserData.assignedClass || "" // ดึงค่าห้องเรียนมาด้วย
+            assignedClass: foundUserData.assignedClass || "" 
           };
           localStorage.setItem('schoolUserData', JSON.stringify(sessionData));
           
