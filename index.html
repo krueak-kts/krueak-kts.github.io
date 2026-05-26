@@ -92,6 +92,7 @@
       .then(res => res.json())
       .then(data => {
         if (data.isRegistered) {
+          localStorage.setItem('schoolUserData', JSON.stringify(data));
           document.getElementById('status').innerText = `ยินดีต้อนรับ ${data.name} กำลังพาไปหน้าหลัก...`;
           setTimeout(() => {
             if (data.role === 'student') window.location.href = 'checkstu.html';
@@ -210,6 +211,14 @@
       .then(res => res.json())
       .then(data => {
         if (data.success) {
+          // ✅ 2. สร้างก้อนข้อมูลและบันทึกลง localStorage สำหรับผู้ใช้ใหม่
+          const sessionData = {
+            name: foundUserData.name,
+            role: foundUserData.role,
+            assignedClass: foundUserData.assignedClass || "" // ดึงค่าห้องเรียนมาด้วย
+          };
+          localStorage.setItem('schoolUserData', JSON.stringify(sessionData));
+          
           alert("ลงทะเบียนผูกบัญชีสำเร็จเรียบร้อยครับ!");
           if (foundUserData.role === 'student') window.location.href = 'checkstu.html';
           else if (foundUserData.role === 'teacher') window.location.href = 'teacher.html';
