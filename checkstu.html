@@ -33,9 +33,11 @@
     .btn-leave-sick { background-color: #3b82f6; margin-bottom: 12px; }
     
     .btn-refresh { background-color: #ffffff; color: #4a5568; border: 1px solid #cbd5e1; font-size: 13px; padding: 6px 12px; width: auto; margin-top: 5px; border-radius: 6px; cursor: pointer; }
+    
     #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
     hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 12px 0; }
   </style>
 </head>
@@ -43,7 +45,9 @@
 
   <div id="loading-overlay">
     <div class="spinner"></div>
-    <div id="loading-text">กำลังเชื่อมต่อระบบเพื่อตรวจสอบสิทธิ์ใช้งาน...</div>
+    <div id="loading-text" style="margin-bottom: 20px; padding: 0 20px;">กำลังเชื่อมต่อระบบเพื่อตรวจสอบสิทธิ์ใช้งาน...</div>
+    
+    <button id="skip-gps-btn" onclick="forceSkipGPS()" style="display: none; background-color: #ef4444; color: white; width: auto; padding: 10px 20px; border-radius: 8px; font-size: 15px;">👉 กดที่นี่หากหน้าจอค้าง (เพื่อแจ้งลา)</button>
   </div>
 
   <div class="container">
@@ -174,7 +178,10 @@
     }
 
     function getLocationAndCalculate() {
-      showLoading('กำลังประมวลผลจับพิกัดดาวเทียม GPS...');
+      showLoading('กำลังประมวลผลจับพิกัดดาวเทียม GPS...\n(อนุญาตให้เปิดตำแหน่งที่ตั้งด้วยนะครับ)');
+      
+      // แสดงปุ่มข้าม หากระบบค้างเกินไป
+      document.getElementById('skip-gps-btn').style.display = 'block';
       
       if (!navigator.geolocation) {
         hideLoading();
@@ -183,55 +190,28 @@
         return;
       }
 
-      let isResolved = false; // ตัวแปรเช็คสถานะป้องกันโค้ดรันตีกัน
-
-      // 🌟 ตั้งเวลาบังคับตัดจบ (8 วินาที) หาก GPS ไม่ตอบสนอง
-      let forceTimeout = setTimeout(() => {
-        if (isResolved) return;
-        isResolved = true; // ล็อกว่าทำงานเสร็จแล้ว
-        hideLoading();
-        updateLocationUI(false, "⚠️ สัญญาณ GPS ขัดข้อง / ไม่ได้เปิดสิทธิ์ตำแหน่ง", "danger");
-        toggleActionButtons(false); // บังคับแสดงปุ่ม ลากิจ/ลาป่วย ทันที!
-      }, 8000); 
-
-      // ดึงพิกัด (ยอมรับแคชพิกัดล่าสุด 10 วินาที เพื่อให้โหลดไวขึ้น)
-      const geoOptionsHigh = { enableHighAccuracy: true, timeout: 4000, maximumAge: 10000 };
-      
+      // ปรับลดความซับซ้อนของการดึงพิกัด เพื่อป้องกันการค้างในแอป LINE
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          if (isResolved) return;
-          isResolved = true;
-          clearTimeout(forceTimeout); 
           handleGeoSuccess(position);
         }, 
-        (err) => {
-          if (isResolved) return;
-          
-          // หากความละเอียดสูงพลาด ให้ลองแบบสำรอง โดยใช้ setTimeout กันเบราว์เซอร์ค้าง
-          setTimeout(() => {
-            if (isResolved) return;
-            navigator.geolocation.getCurrentPosition(
-              (pos) => {
-                if (isResolved) return;
-                isResolved = true;
-                clearTimeout(forceTimeout);
-                handleGeoSuccess(pos);
-              }, 
-              (error) => {
-                if (isResolved) return;
-                isResolved = true;
-                clearTimeout(forceTimeout);
-                handleGeoError(error);
-              }, 
-              { enableHighAccuracy: false, timeout: 3000, maximumAge: 15000 }
-            );
-          }, 200); 
+        (error) => {
+          handleGeoError(error);
         }, 
-        geoOptionsHigh
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 } // ใช้ false ทำให้เชื่อมต่อเร็วกว่ามากใน LINE
       );
     }
 
+    // ฟังก์ชันสำหรับปุ่ม "ข้ามการหาพิกัด"
+    function forceSkipGPS() {
+      hideLoading();
+      updateLocationUI(false, "⚠️ ข้ามการตรวจสอบพิกัด (อนุญาตเฉพาะการแจ้งลา)", "danger");
+      toggleActionButtons(false); // บังคับให้โชว์แค่ปุ่มลากิจ/ลาป่วย
+    }
+
     function handleGeoSuccess(position) {
+      document.getElementById('skip-gps-btn').style.display = 'none'; // ซ่อนปุ่มข้าม
+      
       const uLat = position.coords.latitude;
       const uLng = position.coords.longitude;
       
@@ -253,7 +233,9 @@
     }
 
     function handleGeoError(error) {
+      document.getElementById('skip-gps-btn').style.display = 'none';
       hideLoading();
+      
       let alertMsg = "ไม่สามารถระบุพิกัดตำแหน่งได้";
       if (error.code === 1) alertMsg = "⚠️ โปรดเปิดสิทธิ์อนุมัติ 'เข้าถึงตำแหน่งพิกัด' บนมือถือของคุณ";
       else if (error.code === 2) alertMsg = "⚠️ ไม่สามารถติดต่อสัญญาณ GPS ได้";
@@ -294,6 +276,7 @@
 
       if (!confirm(`คุณต้องการยืนยันบันทึกสถานะ "${selectedStatus}" ใช่หรือไม่?`)) return;
       
+      document.getElementById('skip-gps-btn').style.display = 'none';
       showLoading(`กำลังส่งข้อมูลสถานะ "${selectedStatus}" เข้าสู่ระบบ...`);
       
       let originalText = btnElement.innerText;
