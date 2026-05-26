@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบผู้ปกครอง (Parent Portal)</title>
+    <script src="https://cdn.tailwindcss.com/"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght=300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #F8FAFC; }
+        @media print {
+            body { background-color: white; color: black; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .shadow-md, .shadow-lg, .shadow-sm { box-shadow: none !important; }
+            .rounded-2xl, .rounded-3xl, .rounded-xl { border-radius: 0 !important; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #000 !important; padding: 6px !important; font-size: 12px; color: #000 !important; }
+            th { background-color: #f0f0f0 !important; text-align: center; }
+            span { background: transparent !important; color: black !important; border: none !important; padding: 0 !important; font-weight: normal !important; }
+        }
+    </style>
+</head>
+<body class="p-2 md:p-6 max-w-5xl mx-auto">
+    
+    <div class="no-print bg-gradient-to-r from-indigo-600 to-blue-500 p-6 rounded-3xl text-white shadow-lg mb-4 flex justify-between items-center">
+        <div>
+            <p class="text-indigo-100 text-sm">ยินดีต้อนรับผู้ปกครอง</p>
+            <h2 id="parentName" class="text-xl font-bold mt-1">กำลังโหลดข้อมูลผู้ปกครอง...</h2>
+        </div>
+        <div>
+            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-bold text-sm shadow transition">ออกจากระบบ</button>
+        </div>
+    </div>
+
+    <div id="printHeader" class="hidden print-only text-center mb-4">
+        <h2 class="text-xl font-bold">รายงานสถิติการมาเรียนของนักเรียน (สำหรับผู้ปกครอง)</h2>
+        <p id="printSubtitle" class="text-md mt-1"></p>
+        <p id="printSchoolName" class="text-md mt-1" style="font-weight: bold;"></p>
+    </div>
+
+    <div class="no-print bg-white p-4 rounded-2xl shadow-sm mb-4 flex flex-col md:flex-row gap-4 items-center justify-between border border-gray-100">
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button id="btnDaily" onclick="setMode('daily')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-indigo-500 text-white shadow-md transition">รายวัน</button>
+            <button id="btnWeekly" onclick="setMode('weekly')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">รายสัปดาห์</button>
+            <button id="btnMonthly" onclick="setMode('monthly')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">รายเดือน</button>
+            <button id="btnSummary" onclick="setMode('summary')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition">📊 สรุปสะสมทั้งหมด</button>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+            <input type="date" id="datePicker" class="w-full border p-2 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" onchange="fetchData()">
+            <button onclick="window.print()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-1">🖨️ พิมพ์</button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-md border overflow-x-auto">
+        <div id="tableContainer" class="w-full text-sm p-2 md:p-4 min-h-[150px]"></div>
+    </div>
+
+    <script>
+        // ใช้ URL เว็บแอปพลิเคชันจากระบบหลักของคุณครู
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwM0qHkMQiQNABD1x6HdN8dw24WWof0EoRXd6VTaxHaGvfQjcMcsbIdbJHODVLHpZjO/exec"; 
+        const user = JSON.parse(localStorage.getItem('schoolUserData'));
+        let currentMode = 'daily';
+        
+        async function init() {
+            if(!user) return location.replace('index.html');
+            // แสดงชื่อผู้ปกครองที่เข้าสู่ระบบ
+            document.getElementById('parentName').innerText = `คุณ ${user.name || 'ผู้ปกครอง'}`;
+            
+            const d = new Date();
+            document.getElementById('datePicker').value = toLocalISODate(d);
+            setMode('daily');
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            // ไฮไลต์เลือกปุ่มเมนู
+            ['Daily', 'Weekly', 'Monthly', 'Summary'].forEach(m => {
+                const btn = document.getElementById('btn' + m);
+                if(btn) {
+                    btn.className = (m.toLowerCase() === mode) 
+                        ? "flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-indigo-500 text-white shadow-md transition" 
+                        : "flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition";
+                }
+            });
+
+            // ซ่อนหรือแสดงแถบเลือกวันที่ตามความเหมาะสมของโหมด
+            const datePicker = document.getElementById('datePicker');
+            if(mode === 'summary') {
+                datePicker.classList.add('hidden');
+            } else {
+                datePicker.classList.remove('hidden');
+            }
+
+            fetchData();
+        }
+
+        function toLocalISODate(d) { 
+            return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'); 
+        }
+
+        function getDateRange() {
+            const parts = document.getElementById('datePicker').value.split('-');
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            let start, end;
+            
+            if (currentMode === 'daily') { 
+                start = new Date(d); end = new Date(d);
+            } else if (currentMode === 'weekly') {
+                const day = d.getDay(); 
+                const diff = d.getDate() - day; 
+                start = new Date(d.setDate(diff)); 
+                end = new Date(start); 
+                end.setDate(end.getDate() + 6);
+            } else if (currentMode === 'monthly') {
+                start = new Date(d.getFullYear(), d.getMonth(), 1); 
+                end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+            } else {
+                // โหมดสรุปทั้งหมด ดึงข้อมูลย้อนหลังครอบคลุมทั้งปีการศึกษา (มกราคม - ธันวาคม ของปีที่เลือก)
+                start = new Date(d.getFullYear(), 0, 1);
+                end = new Date(d.getFullYear(), 11, 31);
+            }
+            return { start: toLocalISODate(start), end: toLocalISODate(end) };
+        }
+
+        async function fetchData() {
+            const range = getDateRange();
+            const dArr = document.getElementById('datePicker').value.split('-');
+            
+            let printSub = `ข้อมูลบุตรหลาน ประจำวันที่: ${dArr[2]}/${dArr[1]}/${dArr[0]}`;
+            if (currentMode === 'monthly') printSub = `ข้อมูลบุตรหลาน ประจำเดือน: ${dArr[1]}/${dArr[0]}`;
+            if (currentMode === 'weekly') printSub = `ข้อมูลบุตรหลาน ประจำสัปดาห์วันที่: ${dArr[2]}/${dArr[1]}/${dArr[0]}`;
+            if (currentMode === 'summary') printSub = `สรุปรายงานสถิติสะสมภาพรวมทั้งหมดประจำปี ${dArr[0]}`;
+            document.getElementById('printSubtitle').innerText = printSub;
+
+            const container = document.getElementById('tableContainer');
+            container.innerHTML = '<p class="text-center py-10 text-indigo-600 font-bold animate-pulse no-print">กำลังดึงข้อมูลสถิติของบุตรหลาน...</p>';
+            
+            try {
+                // ส่ง Payload โดยระบุ type: "parent" และพ่วง parentId จาก ID บัญชีผู้ปกครองไปตรวจสอบที่สคริปต์
+                const res = await fetch(GAS_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        action: "getHistory", 
+                        type: "parent", 
+                        parentId: user.id, 
+                        startDate: range.start, 
+                        endDate: range.end 
+                    }) 
+                });
+                const data = await res.json();
+                
+                if(data.sysConf) {
+                    document.getElementById('printSchoolName').innerText = data.sysConf.SCHOOL_NAME || '';
+                }
+
+                if (!data.students || data.students.length === 0) {
+                    container.innerHTML = '<p class="text-center py-10 text-gray-500">❌ ไม่พบข้อมูลรายชื่อนักเรียนที่เชื่อมโยงกับบัญชีผู้ปกครองนี้</p>';
+                    return;
+                }
+
+                // แยกฟังก์ชันการวาด UI ตามโหมดงาน
+                if (currentMode === 'summary') {
+                    renderSummaryView(data.students, data.records);
+                } else {
+                    renderTableView(data.students, data.records, range.start, range.end);
+                }
+            } catch (err) {
+                container.innerHTML = '<p class="text-center py-10 text-red-500 no-print">❌ เกิดข้อผิดพลาดในการเชื่อมต่อสคริปต์กรุณาลองใหม่อีกครั้ง</p>';
+            }
+        }
+
+        function getShortBadge(status) {
+            if(status === "มาเรียน") return '<span class="text-green-500 font-bold text-lg">✓</span>';
+            if(status === "ลาป่วย" || status === "ลากิจ") return '<span class="text-orange-500 font-bold">ลา</span>';
+            if(status === "ขาด") return '<span class="text-red-500 font-bold">ข</span>';
+            return '<span class="text-gray-300">-</span>';
+        }
+
+        // ฟังก์ชันวาดตารางโหมด รายวัน / รายสัปดาห์ / รายเดือน
+        function renderTableView(students, records, startStr, endStr) {
+            const container = document.getElementById('tableContainer');
+            
+            let html = '<table class="w-full text-left whitespace-nowrap border-collapse"><thead class="bg-indigo-50 text-indigo-700 uppercase text-xs"><tr>';
+            html += '<th class="p-3 sticky left-0 bg-indigo-50 z-10 border-r border-b font-bold">ชื่อ-นามสกุล บุตรหลาน</th>';
+            html += '<th class="p-3 border-r border-b text-center font-bold">ระดับชั้น</th>';
+
+            if (currentMode === 'daily') {
+                html += '<th class="p-3 text-center border-b font-bold">สถานะเช็คชื่อในวันนี้</th></tr></thead><tbody class="divide-y text-sm">';
+                
+                students.forEach(s => {
+                    const rec = records.find(r => r.studentId === s.id);
+                    let statusHtml = '';
+                    
+                    if (rec) {
+                        if (rec.status === 'มาเรียน') {
+                            statusHtml = '<span class="bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-bold text-xs">✅ มาเรียน</span>';
+                        } else if (rec.status === 'ขาด') {
+                            statusHtml = '<span class="bg-red-100 text-red-700 px-4 py-1.5 rounded-full font-bold text-xs">❌ ขาดเรียน</span>';
+                        } else {
+                            statusHtml = `<span class="bg-orange-100 text-orange-700 px-4 py-1.5 rounded-full font-bold text-xs">🤒 ${rec.status}</span>`;
+                        }
+                    } else {
+                        statusHtml = '<span class="bg-gray-100 text-gray-500 px-4 py-1.5 rounded-full font-bold text-xs">⏳ ยังไม่มีข้อมูลเช็คชื่อ</span>';
+                    }
+
+                    html += `<tr class="hover:bg-gray-50">
+                        <td class="p-4 font-medium text-gray-900">${s.name}</td>
+                        <td class="p-4 text-center text-gray-600">${s.className || '-'}</td>
+                        <td class="p-4 text-center">${statusHtml}</td>
+                    </tr>`;
+                });
+            } else {
+                // โหมดรายสัปดาห์ และ รายเดือน
+                const dates = []; 
+                let curr = new Date(startStr.split('-')[0], startStr.split('-')[1]-1, startStr.split('-')[2]); 
+                const end = new Date(endStr.split('-')[0], endStr.split('-')[1]-1, endStr.split('-')[2]);
+                while (curr <= end) { dates.push(new Date(curr)); curr.setDate(curr.getDate() + 1); }
+
+                dates.forEach(d => {
+                    const dayNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+                    const dayLabel = dayNames[d.getDay()];
+                    const dateNum = d.getDate();
+                    const headerContent = currentMode === 'weekly' ? `${dayLabel}<br><span class="text-[10px] font-normal opacity-80">${dateNum}</span>` : dateNum;
+                    const weekendClass = (d.getDay() === 0 || d.getDay() === 6) ? 'bg-red-50 text-red-400' : '';
+                    html += `<th class="p-2 text-center border-l border-b min-w-[45px] ${weekendClass}">${headerContent}</th>`;
+                });
+
+                html += '<th class="p-2 text-center border-l border-b bg-green-50 text-green-700 font-bold">มา</th>';
+                html += '<th class="p-2 text-center border-l border-b bg-red-50 text-red-700 font-bold">ขาด/ลา</th></tr></thead><tbody class="divide-y text-xs md:text-sm">';
+
+                students.forEach(s => {
+                    html += `<tr class="hover:bg-gray-50"><td class="p-3 sticky left-0 bg-white border-r font-medium text-gray-900 shadow-sm">${s.name}</td>`;
+                    html += `<td class="p-3 text-center text-gray-600">${s.className || '-'}</td>`;
+
+                    let countPresent = 0; let countAbsent = 0;
+                    dates.forEach(d => {
+                        const dStr = toLocalISODate(d);
+                        const rec = records.find(r => r.studentId === s.id && r.date === dStr);
+                        if(rec) {
+                            if(rec.status === 'มาเรียน') countPresent++;
+                            else countAbsent++;
+                        }
+                        html += `<td class="p-2 text-center border-l">${getShortBadge(rec ? rec.status : '')}</td>`;
+                    });
+
+                    html += `<td class="p-2 text-center border-l font-bold text-green-600 bg-green-50/30">${countPresent}</td>`;
+                    html += `<td class="p-2 text-center border-l font-bold text-red-600 bg-red-50/30">${countAbsent}</td></tr>`;
+                });
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ฟังก์ชันวาดโหมดวิเคราะห์และสรุปสถิติสะสม (Summary Dashboard View)
+        function renderSummaryView(students, records) {
+            const container = document.getElementById('tableContainer');
+            let html = '<div class="space-y-6 py-2">';
+
+            students.forEach(s => {
+                const childRecords = records.filter(r => r.studentId === s.id);
+                const totalChecked = childRecords.length;
+                
+                let present = 0, absent = 0, sick = 0, business = 0;
+                childRecords.forEach(r => {
+                    if (r.status === 'มาเรียน') present++;
+                    else if (r.status === 'ขาด') absent++;
+                    else if (r.status === 'ลาป่วย') sick++;
+                    else if (r.status === 'ลากิจ') business++;
+                });
+
+                const totalLeaveAndAbsent = absent + sick + business;
+                const attendanceRate = totalChecked > 0 ? ((present / totalChecked) * 100).toFixed(1) : '0.0';
+
+                html += `
+                <div class="border border-gray-200 rounded-2xl p-4 md:p-5 bg-slate-50/50 shadow-sm">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-3 mb-4 gap-2">
+                        <div>
+                            <h3 class="text-base font-bold text-gray-800">🧑‍🎓 บุตรหลาน: ${s.name}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">ชั้นเรียน: ${s.className || '-'} | รหัสประจำตัว: ${s.id}</p>
+                        </div>
+                        <div class="bg-indigo-600 text-white px-4 py-1.5 rounded-xl text-xs font-bold shadow-sm">
+                            ร้อยละการเข้าเรียน: ${attendanceRate}%
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-gray-100 text-center shadow-sm">
+                            <span class="block text-xs font-semibold text-gray-500">มาเรียนทั้งหมด</span>
+                            <span class="block text-xl font-bold text-green-600 mt-1">${present} <span class="text-xs font-normal text-gray-400">วัน</span></span>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-gray-100 text-center shadow-sm">
+                            <span class="block text-xs font-semibold text-gray-500">ขาดเรียนสะสม</span>
+                            <span class="block text-xl font-bold text-red-600 mt-1">${absent} <span class="text-xs font-normal text-gray-400">วัน</span></span>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-gray-100 text-center shadow-sm">
+                            <span class="block text-xs font-semibold text-gray-500">ลาป่วยสะสม</span>
+                            <span class="block text-xl font-bold text-amber-600 mt-1">${sick} <span class="text-xs font-normal text-gray-400">วัน</span></span>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-gray-100 text-center shadow-sm">
+                            <span class="block text-xs font-semibold text-gray-500">ลากิจสะสม</span>
+                            <span class="block text-xl font-bold text-orange-600 mt-1">${business} <span class="text-xs font-normal text-gray-400">วัน</span></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="flex justify-between text-xs font-medium text-gray-500 mb-1">
+                            <span>ความต่อเนื่องของเวลาเรียน</span>
+                            <span>รวมขาด/ลา ${totalLeaveAndAbsent} วัน (จากที่มีการบันทึกทั้งหมด ${totalChecked} วัน)</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-green-500 h-2.5 rounded-full" style="width: ${attendanceRate}%"></div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function logout() {
+            localStorage.removeItem('schoolUserData');
+            location.replace('index.html');
+        }
+
+        init();
+    </script>
+</body>
+</html>
