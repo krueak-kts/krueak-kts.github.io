@@ -183,6 +183,7 @@
       reader.readAsDataURL(file);
     }
 
+    // บันทึกการลงทะเบียนขั้นสุดท้าย
     function registerLine() {
       const btn = document.getElementById('btnSubmitRegister');
       btn.innerText = "⏳ กำลังลงทะเบียน...";
@@ -204,9 +205,9 @@
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // 🌟🌟🌟 จุดสำคัญที่แก้ไข: เพิ่ม id ลงไปใน sessionData 🌟🌟🌟
+          // ✅ สร้างก้อนข้อมูลและบันทึกลง localStorage สำหรับผู้ใช้ใหม่
           const sessionData = {
-            id: foundUserData.systemId, // 👈 บันทึกรหัสประจำตัวผู้ใช้ลงในเครื่องแล้ว!
+            id: foundUserData.systemId, // 🔥 จุดที่แก้ไข: เพิ่มบรรทัดนี้ เพื่อส่งรหัสผู้ปกครอง/ครู/นักเรียน ไปให้หน้าถัดไปใช้งาน
             name: foundUserData.name,
             role: foundUserData.role,
             assignedClass: foundUserData.assignedClass || "" 
