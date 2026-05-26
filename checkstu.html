@@ -31,13 +31,11 @@
     .btn-checkin { background-color: #00B900; }
     .btn-leave-personal { background-color: #f59e0b; margin-bottom: 12px; }
     .btn-leave-sick { background-color: #3b82f6; margin-bottom: 12px; }
-    
     .btn-refresh { background-color: #ffffff; color: #4a5568; border: 1px solid #cbd5e1; font-size: 13px; padding: 6px 12px; width: auto; margin-top: 5px; border-radius: 6px; cursor: pointer; }
     
     #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; font-size: 16px; font-weight: bold; color: #2c3e50; }
     .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #00B900; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .hidden { display: none !important; }
     hr { border: 0; border-top: 1px dashed #cbd5e1; margin: 12px 0; }
   </style>
 </head>
@@ -130,6 +128,14 @@
         const result = await response.json();
         
         if (result.success) {
+          // 🛑 เพิ่มการตรวจสอบว่าเช็คชื่อไปแล้วหรือยัง
+          if (result.hasCheckedInToday) {
+            alert('⚠️ คุณได้ทำการลงเวลา/เช็คชื่อสำหรับวันนี้เรียบร้อยแล้วค่ะ \n(กดตกลงเพื่อปิดหน้าต่าง)');
+            liff.closeWindow(); // สั่งปิด LIFF
+            setTimeout(() => { window.close(); }, 500); // สำรองการปิด
+            return; // หยุดการทำงานของหน้าเว็บทันที
+          }
+
           schoolLat = result.settings.schoolLat;
           schoolLng = result.settings.schoolLng;
           maxDistanceAllowed = result.settings.maxDist;
@@ -180,7 +186,6 @@
     function getLocationAndCalculate() {
       showLoading('กำลังประมวลผลจับพิกัดดาวเทียม GPS...\n(อนุญาตให้เปิดตำแหน่งที่ตั้งด้วยนะครับ)');
       
-      // แสดงปุ่มข้าม หากระบบค้างเกินไป
       document.getElementById('skip-gps-btn').style.display = 'block';
       
       if (!navigator.geolocation) {
@@ -190,7 +195,6 @@
         return;
       }
 
-      // ปรับลดความซับซ้อนของการดึงพิกัด เพื่อป้องกันการค้างในแอป LINE
       navigator.geolocation.getCurrentPosition(
         (position) => {
           handleGeoSuccess(position);
@@ -198,19 +202,18 @@
         (error) => {
           handleGeoError(error);
         }, 
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 } // ใช้ false ทำให้เชื่อมต่อเร็วกว่ามากใน LINE
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 }
       );
     }
 
-    // ฟังก์ชันสำหรับปุ่ม "ข้ามการหาพิกัด"
     function forceSkipGPS() {
       hideLoading();
       updateLocationUI(false, "⚠️ ข้ามการตรวจสอบพิกัด (อนุญาตเฉพาะการแจ้งลา)", "danger");
-      toggleActionButtons(false); // บังคับให้โชว์แค่ปุ่มลากิจ/ลาป่วย
+      toggleActionButtons(false);
     }
 
     function handleGeoSuccess(position) {
-      document.getElementById('skip-gps-btn').style.display = 'none'; // ซ่อนปุ่มข้าม
+      document.getElementById('skip-gps-btn').style.display = 'none';
       
       const uLat = position.coords.latitude;
       const uLng = position.coords.longitude;
@@ -300,8 +303,26 @@
         hideLoading();
 
         if (data.success) {
-          alert(`🎉 บันทึกข้อมูลสถานะ "${selectedStatus}" สำเร็จเรียบร้อยแล้วค่ะ!`);
-          liff.closeWindow();
+          
+          // 🟢 เมื่อบันทึกสำเร็จ เปลี่ยนหน้าจอเป็นปุ่มปิดแอปขนาดใหญ่ 100%
+          document.body.innerHTML = `
+            <div style="font-family: 'Sarabun', sans-serif; text-align: center; padding: 40px 15px; background-color: #f0f4f8; height: 100vh; box-sizing: border-box;">
+              <div style="background: white; padding: 40px 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); max-width: 400px; margin: auto;">
+                <div style="font-size: 70px; margin-bottom: 10px;">✅</div>
+                <h2 style="color: #00B900; margin-bottom: 5px; font-size: 24px;">บันทึกข้อมูลสำเร็จ!</h2>
+                <p style="color: #4a5568; font-size: 16px; margin-bottom: 30px;">
+                  ระบบได้บันทึกสถานะ <b>"${selectedStatus}"</b> <br>เข้าสู่ระบบของโรงเรียนเรียบร้อยแล้ว
+                </p>
+                <button onclick="liff.closeWindow(); window.close();" style="background-color: #ef4444; color: white; border: none; padding: 16px 20px; border-radius: 12px; font-size: 18px; font-weight: bold; width: 100%; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                  ❌ ปิดหน้าต่างนี้
+                </button>
+              </div>
+            </div>
+          `;
+          
+          // ลองสั่งปิดแอปอัตโนมัติก่อน 1 ครั้ง
+          liff.closeWindow(); 
+
         } else {
           alert('ข้อผิดพลาดจากระบบ: ' + data.message);
           btnElement.disabled = false;
