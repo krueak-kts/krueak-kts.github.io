@@ -60,15 +60,14 @@
 
     <script>
         const GAS_URL = "https://script.google.com/macros/s/AKfycbwM0qHkMQiQNABD1x6HdN8dw24WWof0EoRXd6VTaxHaGvfQjcMcsbIdbJHODVLHpZjO/exec"; 
-        const LIFF_ID = "2010176412-U51gEMNp"; // ดึงจาก Settings ของโรงเรียนคุณครู
+        const LIFF_ID = "2010176412-U51gEMNp";
         
         let user = JSON.parse(localStorage.getItem('schoolUserData')) || {};
         let currentMode = 'daily';
-        let currentLineUserId = ""; // เก็บค่า LINE ID สดๆ ป้องกันบั๊ก LocalStorage หาย
+        let currentLineUserId = ""; 
         
         async function init() {
             try {
-                // Initialize LIFF เพื่อตรวจสอบตัวตนสดๆ ป้องกันหน้าค้างและแก้ปัญหาข้อมูลหลุด
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) {
                     liff.login();
@@ -77,28 +76,17 @@
                 const profile = await liff.getProfile();
                 currentLineUserId = profile.userId;
 
-                // 🌟 ระบบ Self-healing & ตรวจสอบสิทธิ์แบบเรียลไทม์: ดึงข้อมูลสดๆ จากหลังบ้านผ่าน LINE ID เสมอ
-                const refresh = await fetch(GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ action: "checkUser", userId: currentLineUserId })
-                });
-                const freshData = await refresh.json();
-                
-                // ถ้าระบบหลังบ้านพบว่า LINE ID นี้เคยลงทะเบียนไว้แล้ว
-                if (freshData.isRegistered || freshData.success) {
-                    const fetchedUser = freshData.user || freshData;
-                    
-                    // ปรับโครงสร้างข้อมูลผู้ใช้ให้สมบูรณ์ (ดึงรหัสประจำตัว .id มาบันทึกให้ครบถ้วน)
-                    user = {
-                        id: fetchedUser.id || user.id || "",
-                        name: fetchedUser.name || user.name || "",
-                        role: fetchedUser.role || user.role || "parent",
-                        assignedClass: fetchedUser.assignedClass || user.assignedClass || ""
-                    };
-                    
-                    // บันทึกอัปเดตลง LocalStorage เพื่อป้องกันข้อมูลสูญหายในการเปิดครั้งต่อไป
-                    localStorage.setItem('schoolUserData', JSON.stringify(user));
+                if (!user || !user.id) {
+                    const resfresh = await fetch(GAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 🔥 แก้ไข: เติม Headers ป้องกันค่าว่าง
+                        body: JSON.stringify({ action: "getSettingsAndUser", userId: currentLineUserId })
+                    });
+                    const freshData = await resfresh.json();
+                    if (freshData.success && freshData.user) {
+                        user = freshData.user;
+                        localStorage.setItem('schoolUserData', JSON.stringify(user));
+                    }
                 }
 
                 if(!user || user.role !== 'parent') {
@@ -113,7 +101,6 @@
                 setMode('daily');
             } catch (err) {
                 console.error(err);
-                // Fallback สำหรับเปิดทดสอบภายนอกแอป LINE (เช่น บน Browser คอมพิวเตอร์)
                 const d = new Date();
                 document.getElementById('datePicker').value = toLocalISODate(d);
                 setMode('daily');
@@ -137,7 +124,6 @@
             } else {
                 datePicker.classList.remove('hidden');
             }
-
             fetchData();
         }
 
@@ -182,13 +168,13 @@
             container.innerHTML = '<p class="text-center py-10 text-indigo-600 font-bold animate-pulse no-print">กำลังดึงข้อมูลสถิติของบุตรหลาน...</p>';
             
             try {
-                // 🌟 ส่งค่าทั้ง parentId และ lineUserId ควบคู่กัน ป้องกันข้อมูลตกหล่น 100%
                 const res = await fetch(GAS_URL, { 
                     method: 'POST', 
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 🔥 แก้ไข: เติม Headers สำคัญ
                     body: JSON.stringify({ 
                         action: "getHistory", 
                         type: "parent", 
-                        parentId: (user && user.id) ? user.id : "", 
+                        parentId: user.id || "", 
                         lineUserId: currentLineUserId || "", 
                         startDate: range.start, 
                         endDate: range.end 
@@ -291,7 +277,6 @@
                     html += `<td class="p-2 text-center border-l font-bold text-red-600 bg-red-50/30">${countAbsent}</td></tr>`;
                 });
             }
-
             html += '</tbody></table>';
             container.innerHTML = html;
         }
@@ -303,8 +288,8 @@
             students.forEach(s => {
                 const childRecords = records.filter(r => r.studentId.toString().trim() === s.id.toString().trim());
                 const totalChecked = childRecords.length;
-                
                 let present = 0, absent = 0, sick = 0, business = 0;
+                
                 childRecords.forEach(r => {
                     if (r.status === 'มาเรียน') present++;
                     else if (r.status === 'ขาด') absent++;
@@ -352,12 +337,11 @@
                             <span>รวมขาด/ลา ${totalLeaveAndAbsent} วัน (จากที่มีการบันทึกทั้งหมด ${totalChecked} วัน)</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-green-500 h-2.5 rounded-full" style="width: ${attendanceRate}%"></div>
+                            <div class="bg-green-500 h-2.5 rounded-full" style="width: ${attendanceRate}%\"></div>
                         </div>
                     </div>
                 </div>`;
             });
-
             html += '</div>';
             container.innerHTML = html;
         }
