@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>ลงทะเบียนและบันทึกพิกัด</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    #preview { max-width: 200px; margin: 10px auto; display: none; border-radius: 8px; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
+    <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">บันทึกพิกัดนักเรียน</h2>
+    
+    <div id="lineProfile" class="flex items-center space-x-4 mb-6 p-3 bg-blue-50 rounded-xl hidden">
+      <img id="lineAvatar" class="w-12 h-12 rounded-full border-2 border-blue-400" src="" alt="Avatar">
+      <div>
+        <p class="text-sm text-gray-500">ยินดีต้อนรับ</p>
+        <p id="lineNameTxt" class="font-semibold text-gray-800"></p>
+      </div>
+    </div>
+
+    <form id="studentForm" onsubmit="handleSubmit(event)" class="space-y-4">
+      <input type="hidden" id="lineId" name="lineId">
+      <input type="hidden" id="lineName" name="lineName">
+      <input type="hidden" id="lat" name="lat">
+      <input type="hidden" id="lng" name="lng">
+
+      <div>
+        <label class="block text-gray-700 text-sm font-semibold mb-1">รหัสนักเรียน</label>
+        <input type="text" id="studentId" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+      
+      <div>
+        <label class="block text-gray-700 text-sm font-semibold mb-1">ชื่อ</label>
+        <input type="text" id="firstName" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 text-sm font-semibold mb-1">นามสกุล</label>
+        <input type="text" id="lastName" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 text-sm font-semibold mb-1">ชื่อเล่น</label>
+        <input type="text" id="nickname" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="text-center p-4 border-2 border-dashed border-gray-300 rounded-xl">
+        <label class="block text-gray-700 text-sm font-semibold mb-2">ถ่ายรูปตนเอง</label>
+        
+        <input type="file" id="camera-file" accept="image/*" capture="environment" onchange="handleFileSelect(event)" class="hidden">
+        
+        <button type="button" onclick="document.getElementById('camera-file').click()" id="btn-camera" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">
+          เปิดกล้องถ่ายรูป
+        </button>
+        
+        <img id="preview" alt="Preview">
+        <input type="hidden" id="imageBlob">
+      </div>
+
+      <div id="gpsStatus" class="text-xs text-center text-amber-600 font-medium">กำลังขอพิกัด GPS...</div>
+
+      <button type="submit" id="btn-submit" disabled class="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold opacity-50 cursor-not-allowed hover:bg-blue-600 transition">
+        บันทึกข้อมูล
+      </button>
+    </form>
+  </div>
+
+  <script>
+    const LIFF_ID = "2010211460-b5iFssqU"; // LIFF ID ของคุณ
+    
+    // ⚠️ สำคัญมาก: นำลิงก์ Web App (URL /exec) ที่ได้จากการ Deploy ใน GAS มาใส่ที่นี่
+    const GAS_WEB_APP_URL = "ใส่_URL_WEB_APP_ของ_GAS_ตรงนี้"; 
+
+    window.onload = function() {
+      initLiff();
+      getLocation();
+    }
+
+    async function initLiff() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login();
+        } else {
+          const profile = await liff.getProfile();
+          document.getElementById("lineId").value = profile.userId;
+          document.getElementById("lineName").value = profile.displayName;
+          document.getElementById("lineNameTxt").innerText = profile.displayName;
+          document.getElementById("lineAvatar").src = profile.pictureUrl || "https://via.placeholder.com/150";
+          document.getElementById("lineProfile").classList.remove("hidden");
+        }
+      } catch (error) {
+        console.error("LIFF อิมพลีเมนต์ไม่สำเร็จ", error);
+      }
+    }
+
+    function getLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            document.getElementById("lat").value = position.coords.latitude;
+            document.getElementById("lng").value = position.coords.longitude;
+            document.getElementById("gpsStatus").className = "text-xs text-center text-green-600 font-medium";
+            document.getElementById("gpsStatus").innerText = `📌 ล็อกพิกัดเรียบร้อย (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`;
+            enableSubmitButton();
+          },
+          (error) => {
+            document.getElementById("gpsStatus").className = "text-xs text-center text-red-500 font-medium";
+            document.getElementById("gpsStatus").innerText = "❌ ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS บนมือถือ";
+            alert("กรุณาอนุญาตให้แอปเข้าถึงพิกัด GPS เพื่อใช้งาน");
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        document.getElementById("gpsStatus").innerText = "เบราว์เซอร์นี้ไม่รองรับ GPS";
+      }
+    }
+
+    // ฟังก์ชันจัดการเมื่อถ่ายรูปเสร็จ
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // ย่อขนาดภาพให้กว้างสูงสุด 800px ป้องกันไฟล์ใหญ่เกินไป
+          const MAX_WIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          
+          const preview = document.getElementById('preview');
+          preview.src = dataUrl;
+          preview.style.display = 'block';
+          
+          document.getElementById('imageBlob').value = dataUrl;
+          document.getElementById('btn-camera').innerText = 'ถ่ายรูปใหม่';
+          document.getElementById('btn-camera').className = 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700';
+          
+          enableSubmitButton();
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function enableSubmitButton() {
+      const lat = document.getElementById("lat").value;
+      const img = document.getElementById("imageBlob").value;
+      const btn = document.getElementById("btn-submit");
+      if(lat && img) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    // ฟังก์ชันส่งข้อมูลไปที่ GAS หลังบ้านผ่าน Fetch API (ย้ายมาจาก google.script.run)
+    function handleSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById("btn-submit");
+      btn.innerText = "กำลังบันทึกกรุณารอ...";
+      btn.disabled = true;
+
+      const formData = {
+        studentId: document.getElementById("studentId").value,
+        firstName: document.getElementById("firstName").value,
+        lastName: document.getElementById("lastName").value,
+        nickname: document.getElementById("nickname").value,
+        lineId: document.getElementById("lineId").value,
+        lineName: document.getElementById("lineName").value,
+        lat: document.getElementById("lat").value,
+        lng: document.getElementById("lng").value,
+        imageBlob: document.getElementById("imageBlob").value
+      };
+
+      // ใช้ Fetch API เพื่อยิงข้ามโดเมนไปหา Google Apps Script
+      fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify(formData)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then((response) => {
+        if(response.status === "success") {
+          alert(response.message);
+          liff.closeWindow(); 
+        } else {
+          alert("เกิดข้อผิดพลาดจากระบบหลังบ้าน: " + response.message);
+          btn.innerText = "บันทึกข้อมูล";
+          btn.disabled = false;
+        }
+      })
+      .catch((err) => {
+        alert("ระบบขัดข้อง (ติดต่อ Server ไม่ได้): " + err.message);
+        btn.innerText = "บันทึกข้อมูล";
+        btn.disabled = false;
+      });
+    }
+  </script>
+</body>
+</html>
