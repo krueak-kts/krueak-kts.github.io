@@ -1,86 +1,105 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-  <base target="_top">
   <meta charset="UTF-8">
-  <title>ลงทะเบียนและบันทึกพิกัด</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบันทึกพิกัดและข้อมูลนักเรียน</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
-    #preview { max-width: 200px; margin: 10px auto; display: none; border-radius: 8px; }
+    #preview { max-width: 100%; max-height: 200px; margin: 10px auto; display: none; border-radius: 12px; object-fit: cover; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
 
   <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md">
-    <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">บันทึกพิกัดนักเรียน</h2>
     
     <div id="lineProfile" class="flex items-center space-x-4 mb-6 p-3 bg-blue-50 rounded-xl hidden">
       <img id="lineAvatar" class="w-12 h-12 rounded-full border-2 border-blue-400" src="" alt="Avatar">
       <div>
-        <p class="text-sm text-gray-500">ยินดีต้อนรับ</p>
+        <p class="text-xs text-gray-500">ผู้ใช้งาน LINE</p>
         <p id="lineNameTxt" class="font-semibold text-gray-800"></p>
       </div>
     </div>
 
-    <form id="studentForm" onsubmit="handleSubmit(event)" class="space-y-4">
-      <input type="hidden" id="lineId" name="lineId">
-      <input type="hidden" id="lineName" name="lineName">
-      <input type="hidden" id="lat" name="lat">
-      <input type="hidden" id="lng" name="lng">
+    <div id="panel-loading" class="text-center py-8">
+      <div class="animate-spin inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
+      <p class="text-gray-600 font-medium">กำลังตรวจสอบข้อมูลการลงทะเบียน...</p>
+    </div>
 
-      <div>
-        <label class="block text-gray-700 text-sm font-semibold mb-1">รหัสนักเรียน</label>
-        <input type="text" id="studentId" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
-      </div>
+    <div id="panel-register" class="hidden space-y-4">
+      <h3 class="text-lg font-bold text-red-600 text-center">ยังไม่ได้ลงทะเบียนสิทธิ์ในระบบ</h3>
+      <p class="text-sm text-gray-500 text-center">กรุณากรอกรหัสนักเรียนเพื่อตรวจสอบข้อมูลและยืนยันตัวตน</p>
       
       <div>
-        <label class="block text-gray-700 text-sm font-semibold mb-1">ชื่อ</label>
-        <input type="text" id="firstName" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <label class="block text-gray-700 text-sm font-semibold mb-1">เลขประจำตัวนักเรียน</label>
+        <div class="flex space-x-2">
+          <input type="text" id="reg-student-id" class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <button type="button" onclick="searchStudent()" id="btn-search" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-blue-700 whitespace-nowrap">ตรวจสอบ</button>
+        </div>
       </div>
 
-      <div>
-        <label class="block text-gray-700 text-sm font-semibold mb-1">นามสกุล</label>
-        <input type="text" id="lastName" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
-      </div>
-
-      <div>
-        <label class="block text-gray-700 text-sm font-semibold mb-1">ชื่อเล่น</label>
-        <input type="text" id="nickname" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
-      </div>
-
-      <div class="text-center p-4 border-2 border-dashed border-gray-300 rounded-xl">
-        <label class="block text-gray-700 text-sm font-semibold mb-2">ถ่ายรูปตนเอง</label>
+      <div id="reg-info-box" class="bg-slate-50 p-4 rounded-xl border border-dashed hidden space-y-2 text-sm text-gray-700">
+        <p class="font-bold text-blue-600 text-center text-base mb-1">กรุณาตรวจสอบชื่อ-สกุลให้ถูกต้อง</p>
+        <p><strong>ชื่อ-นามสกุล:</strong> <span id="lbl-name"></span></p>
+        <p><strong>ระดับชั้น:</strong> <span id="lbl-class"></span></p>
         
-        <input type="file" id="camera-file" accept="image/*" capture="environment" onchange="handleFileSelect(event)" class="hidden">
-        
-        <button type="button" onclick="document.getElementById('camera-file').click()" id="btn-camera" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700">
-          เปิดกล้องถ่ายรูป
+        <button type="button" onclick="confirmRegister()" id="btn-confirm-reg" class="w-full bg-green-600 text-white py-2.5 rounded-xl font-semibold hover:bg-green-700 transition mt-4">
+          ถูกต้อง ยืนยันการลงทะเบียน
         </button>
-        
-        <img id="preview" alt="Preview">
-        <input type="hidden" id="imageBlob">
       </div>
+    </div>
 
-      <div id="gpsStatus" class="text-xs text-center text-amber-600 font-medium">กำลังขอพิกัด GPS...</div>
+    <div id="panel-gps" class="hidden">
+      <h2 class="text-xl font-bold text-center text-blue-600 mb-4">บันทึกพิกัดและข้อมูลนักเรียน</h2>
+      
+      <form id="gpsForm" onsubmit="handleGpsSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border">
+          <div><span class="text-gray-400">รหัสนักเรียน:</span> <p id="view-id" class="font-bold text-gray-800"></p></div>
+          <div><span class="text-gray-400">ชั้นเรียน:</span> <p id="view-class" class="font-bold text-gray-800"></p></div>
+          <div class="col-span-2"><span class="text-gray-400">ชื่อ-สกุล:</span> <p id="view-name" class="font-bold text-gray-800 text-sm"></p></div>
+        </div>
 
-      <button type="submit" id="btn-submit" disabled class="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold opacity-50 cursor-not-allowed hover:bg-blue-600 transition">
-        บันทึกข้อมูล
-      </button>
-    </form>
+        <div>
+          <label class="block text-gray-700 text-sm font-semibold mb-1">ชื่อเล่น <span class="text-red-500">*</span></label>
+          <input type="text" id="nickname" required class="w-full px-3 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <div class="text-center p-4 border-2 border-dashed border-gray-300 rounded-xl bg-slate-50">
+          <label class="block text-gray-700 text-sm font-semibold mb-2">ถ่ายรูปบ้านพักอาศัย <span class="text-red-500">*</span></label>
+          <input type="file" id="camera-file" accept="image/*" capture="environment" onchange="handleFileSelect(event)" class="hidden">
+          
+          <button type="button" onclick="document.getElementById('camera-file').click()" id="btn-camera" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition">
+            📸 เปิดกล้องถ่ายรูปบ้าน
+          </button>
+          
+          <img id="preview" alt="Preview Image">
+          <input type="hidden" id="imageBlob">
+        </div>
+
+        <div id="gpsStatus" class="text-xs text-center text-amber-600 font-medium bg-amber-50 py-2 rounded-lg">กำลังร้องขอพิกัด GPS...</div>
+
+        <button type="submit" id="btn-submit" disabled class="w-full bg-blue-500 text-white py-3 rounded-xl font-semibold opacity-50 cursor-not-allowed hover:bg-blue-600 transition text-base">
+          บันทึกข้อมูลพิกัดลงระบบ
+        </button>
+      </form>
+    </div>
+
   </div>
 
   <script>
     const LIFF_ID = "2010211460-b5iFssqU"; // LIFF ID ของคุณ
-    
-    // ⚠️ สำคัญมาก: นำลิงก์ Web App (URL /exec) ที่ได้จากการ Deploy ใน GAS มาใส่ที่นี่
-    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4_erTSHO_h_Y8_sUKlL8FEQ5jBZefyBkw3Z7jhInrCo0BwwpxTmkKRbjUVb6ytcNf/exec"; 
+    const GAS_WEB_APP_URL = "ใส่_URL_WEB_APP_ของ_GAS_ตรงนี้"; // ⚠️ นำลิงก์ที่ได้จากการ Deploy ใน GAS มาใส่ที่นี่
+
+    let globalProfile = { userId: "", displayName: "" };
+    let activeStudentData = null; // เก็บข้อมูลนักเรียนที่กำลังทำงานอยู่
 
     window.onload = function() {
       initLiff();
       getLocation();
     }
 
+    // เรียกใช้ระบบไลน์และตรวจสอบข้อมูลครั้งแรก
     async function initLiff() {
       try {
         await liff.init({ liffId: LIFF_ID });
@@ -88,40 +107,118 @@
           liff.login();
         } else {
           const profile = await liff.getProfile();
-          document.getElementById("lineId").value = profile.userId;
-          document.getElementById("lineName").value = profile.displayName;
+          globalProfile.userId = profile.userId;
+          globalProfile.displayName = profile.displayName;
+          
           document.getElementById("lineNameTxt").innerText = profile.displayName;
           document.getElementById("lineAvatar").src = profile.pictureUrl || "https://via.placeholder.com/150";
           document.getElementById("lineProfile").classList.remove("hidden");
+          
+          // ตรวจสอบกับฝั่งหลังบ้านว่า Line ID นี้ลงทะเบียนไว้หรือยัง
+          checkUserRegistration(profile.userId);
         }
       } catch (error) {
-        console.error("LIFF อิมพลีเมนต์ไม่สำเร็จ", error);
+        alert("LIFF ทำงานผิดพลาด: " + error.message);
       }
     }
 
+    // เรียก API ตรวจสอบสิทธิ์ไลน์ไอดี
+    function checkUserRegistration(lineId) {
+      callAPI("checkLineId", { lineId: lineId }, (res) => {
+        document.getElementById("panel-loading").classList.add("hidden");
+        if (res.status === "found") {
+          activeStudentData = res;
+          showGpsPanel(res);
+        } else {
+          document.getElementById("panel-register").classList.remove("hidden");
+        }
+      });
+    }
+
+    // หน้าจอลงทะเบียน: ค้นหาข้อมูลรหัสนักเรียน
+    function searchStudent() {
+      const studentId = document.getElementById("reg-student-id").value.trim();
+      if (!studentId) return alert("กรุณากรอกรหัสนักเรียน");
+      
+      const btn = document.getElementById("btn-search");
+      btn.innerText = "กำลังค้น...";
+      btn.disabled = true;
+
+      callAPI("checkStudentId", { studentId: studentId }, (res) => {
+        btn.innerText = "ตรวจสอบ";
+        btn.disabled = false;
+        if (res.status === "success") {
+          activeStudentData = res;
+          document.getElementById("lbl-name").innerText = `${res.prefix}${res.firstName} ${res.lastName}`;
+          document.getElementById("lbl-class").innerText = res.className;
+          document.getElementById("reg-info-box").classList.remove("hidden");
+        } else {
+          alert(res.message);
+          document.getElementById("reg-info-box").classList.add("hidden");
+        }
+      });
+    }
+
+    // หน้าจอลงทะเบียน: กดยืนยันผูก Line ID
+    function confirmRegister() {
+      if (!activeStudentData) return;
+      const btn = document.getElementById("btn-confirm-reg");
+      btn.innerText = "กำลังลงทะเบียน...";
+      btn.disabled = true;
+
+      const payload = {
+        studentId: activeStudentData.studentId,
+        lineId: globalProfile.userId,
+        lineName: globalProfile.displayName
+      };
+
+      callAPI("registerLine", payload, (res) => {
+        if (res.status === "success") {
+          alert(res.message);
+          document.getElementById("panel-register").classList.add("hidden");
+          showGpsPanel(activeStudentData);
+        } else {
+          alert(res.message);
+          btn.innerText = "ถูกต้อง ยืนยันการลงทะเบียน";
+          btn.disabled = false;
+        }
+      });
+    }
+
+    // แสดงผลข้อมูลนักเรียนไปที่หน้ากรอก GPS
+    function showGpsPanel(student) {
+      document.getElementById("view-id").innerText = student.studentId;
+      document.getElementById("view-class").innerText = student.className;
+      document.getElementById("view-name").innerText = `${student.prefix}${student.firstName} ${student.lastName}`;
+      document.getElementById("panel-gps").classList.remove("hidden");
+      enableSubmitButton();
+    }
+
+    // ดึงพิกัดตำแหน่ง GPS มือถือ
+    let currentLat = "", currentLng = "";
     function getLocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            document.getElementById("lat").value = position.coords.latitude;
-            document.getElementById("lng").value = position.coords.longitude;
-            document.getElementById("gpsStatus").className = "text-xs text-center text-green-600 font-medium";
-            document.getElementById("gpsStatus").innerText = `📌 ล็อกพิกัดเรียบร้อย (${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)})`;
+            currentLat = position.coords.latitude;
+            currentLng = position.coords.longitude;
+            const statusBox = document.getElementById("gpsStatus");
+            statusBox.className = "text-xs text-center text-green-700 font-medium bg-green-50 py-2 rounded-lg";
+            statusBox.innerText = `📌 ล็อกพิกัดบ้านเรียบร้อย (${currentLat.toFixed(5)}, ${currentLng.toFixed(5)})`;
             enableSubmitButton();
           },
           (error) => {
-            document.getElementById("gpsStatus").className = "text-xs text-center text-red-500 font-medium";
-            document.getElementById("gpsStatus").innerText = "❌ ไม่สามารถดึงพิกัดได้ กรุณาเปิด GPS บนมือถือ";
-            alert("กรุณาอนุญาตให้แอปเข้าถึงพิกัด GPS เพื่อใช้งาน");
+            const statusBox = document.getElementById("gpsStatus");
+            statusBox.className = "text-xs text-center text-red-700 font-medium bg-red-50 py-2 rounded-lg";
+            statusBox.innerText = "❌ ไม่สามารถดึงพิกัดได้ กรุณาเปิดระบบ GPS บนมือถือของคุณ";
+            alert("กรุณาเปิดและอนุญาตให้สิทธิ์เข้าถึง GPS แก่แอปพลิเคชัน เพื่อการบันทึกข้อมูลพิกัดบ้านพัก");
           },
-          { enableHighAccuracy: true, timeout: 10000 }
+          { enableHighAccuracy: true, timeout: 15000 }
         );
-      } else {
-        document.getElementById("gpsStatus").innerText = "เบราว์เซอร์นี้ไม่รองรับ GPS";
       }
     }
 
-    // ฟังก์ชันจัดการเมื่อถ่ายรูปเสร็จ
+    // จัดการเมื่อถ่ายรูปบ้านเสร็จ (แปลงรูปและย่อขนาดเป็น Base64)
     function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -133,8 +230,7 @@
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          // ย่อขนาดภาพให้กว้างสูงสุด 800px ป้องกันไฟล์ใหญ่เกินไป
-          const MAX_WIDTH = 800;
+          const MAX_WIDTH = 800; // บีบขนาดความกว้างให้ภาพมีขนาดเบาส่งข้อมูลไว
           let width = img.width;
           let height = img.height;
           
@@ -154,8 +250,7 @@
           preview.style.display = 'block';
           
           document.getElementById('imageBlob').value = dataUrl;
-          document.getElementById('btn-camera').innerText = 'ถ่ายรูปใหม่';
-          document.getElementById('btn-camera').className = 'bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700';
+          document.getElementById('btn-camera').innerText = '🔄 ถ่ายรูปใหม่';
           
           enableSubmitButton();
         };
@@ -164,58 +259,59 @@
       reader.readAsDataURL(file);
     }
 
+    // เปิดให้กดปุ่มส่งข้อมูลเมื่อพิกัดและรูปภาพครบถ้วนแล้วเท่านั้น
     function enableSubmitButton() {
-      const lat = document.getElementById("lat").value;
       const img = document.getElementById("imageBlob").value;
       const btn = document.getElementById("btn-submit");
-      if(lat && img) {
+      if (currentLat && img && activeStudentData) {
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
       }
     }
 
-    // ฟังก์ชันส่งข้อมูลไปที่ GAS หลังบ้านผ่าน Fetch API (ย้ายมาจาก google.script.run)
-    function handleSubmit(e) {
+    // ส่งข้อมูลพิกัดลงระบบฝั่ง AddGPS
+    function handleGpsSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById("btn-submit");
-      btn.innerText = "กำลังบันทึกกรุณารอ...";
+      btn.innerText = "⏳ กำลังบันทึกข้อมูลกรุณารอ...";
       btn.disabled = true;
 
-      const formData = {
-        studentId: document.getElementById("studentId").value,
-        firstName: document.getElementById("firstName").value,
-        lastName: document.getElementById("lastName").value,
-        nickname: document.getElementById("nickname").value,
-        lineId: document.getElementById("lineId").value,
-        lineName: document.getElementById("lineName").value,
-        lat: document.getElementById("lat").value,
-        lng: document.getElementById("lng").value,
-        imageBlob: document.getElementById("imageBlob").value
+      const payload = {
+        studentId: activeStudentData.studentId,
+        prefix: activeStudentData.prefix,
+        firstName: activeStudentData.firstName,
+        lastName: activeStudentData.lastName,
+        className: activeStudentData.className,
+        nickname: document.getElementById("nickname").value.trim(),
+        lat: currentLat,
+        lng: currentLng,
+        imageBlob: document.getElementById("imageBlob").value,
+        lineId: globalProfile.userId,
+        lineName: globalProfile.displayName
       };
 
-      // ใช้ Fetch API เพื่อยิงข้ามโดเมนไปหา Google Apps Script
-      fetch(GAS_WEB_APP_URL, {
-        method: "POST",
-        body: JSON.stringify(formData)
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
-      .then((response) => {
-        if(response.status === "success") {
-          alert(response.message);
-          liff.closeWindow(); 
+      callAPI("saveGPS", payload, (res) => {
+        if (res.status === "success") {
+          alert(res.message);
+          liff.closeWindow();
         } else {
-          alert("เกิดข้อผิดพลาดจากระบบหลังบ้าน: " + response.message);
-          btn.innerText = "บันทึกข้อมูล";
+          alert("เกิดข้อผิดพลาด: " + res.message);
+          btn.innerText = "บันทึกข้อมูลพิกัดลงระบบ";
           btn.disabled = false;
         }
+      });
+    }
+
+    // ตัวเชื่อมกลางเรียกคุยข้ามโดเมนระหว่าง GitHub กับ Google Apps Script (Fetch API)
+    function callAPI(action, data, callback) {
+      fetch(GAS_WEB_APP_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: action, data: data })
       })
-      .catch((err) => {
-        alert("ระบบขัดข้อง (ติดต่อ Server ไม่ได้): " + err.message);
-        btn.innerText = "บันทึกข้อมูล";
-        btn.disabled = false;
+      .then(res => res.json())
+      .then(callback)
+      .catch(err => {
+        alert("การเชื่อมต่อเซิร์ฟเวอร์หลังบ้านขัดข้อง: " + err.message);
       });
     }
   </script>
