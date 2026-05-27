@@ -77,17 +77,28 @@
                 const profile = await liff.getProfile();
                 currentLineUserId = profile.userId;
 
-                // 🌟 ระบบ Self-healing: ถ้ารหัสประจำตัวผู้ปกครองในเครื่องว่างเปล่า ให้ดึงจากหลังบ้านมาอัปเดตให้อัตโนมัติทันที
-                if (!user || !user.id) {
-                    const resfresh = await fetch(GAS_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: "getSettingsAndUser", userId: currentLineUserId })
-                    });
-                    const freshData = await resfresh.json();
-                    if (freshData.success && freshData.user) {
-                        user = freshData.user;
-                        localStorage.setItem('schoolUserData', JSON.stringify(user));
-                    }
+                // 🌟 ระบบ Self-healing & ตรวจสอบสิทธิ์แบบเรียลไทม์: ดึงข้อมูลสดๆ จากหลังบ้านผ่าน LINE ID เสมอ
+                const refresh = await fetch(GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "checkUser", userId: currentLineUserId })
+                });
+                const freshData = await refresh.json();
+                
+                // ถ้าระบบหลังบ้านพบว่า LINE ID นี้เคยลงทะเบียนไว้แล้ว
+                if (freshData.isRegistered || freshData.success) {
+                    const fetchedUser = freshData.user || freshData;
+                    
+                    // ปรับโครงสร้างข้อมูลผู้ใช้ให้สมบูรณ์ (ดึงรหัสประจำตัว .id มาบันทึกให้ครบถ้วน)
+                    user = {
+                        id: fetchedUser.id || user.id || "",
+                        name: fetchedUser.name || user.name || "",
+                        role: fetchedUser.role || user.role || "parent",
+                        assignedClass: fetchedUser.assignedClass || user.assignedClass || ""
+                    };
+                    
+                    // บันทึกอัปเดตลง LocalStorage เพื่อป้องกันข้อมูลสูญหายในการเปิดครั้งต่อไป
+                    localStorage.setItem('schoolUserData', JSON.stringify(user));
                 }
 
                 if(!user || user.role !== 'parent') {
@@ -102,7 +113,7 @@
                 setMode('daily');
             } catch (err) {
                 console.error(err);
-                // Fallback สำหรับเปิดทดสอบภายนอกแอป LINE
+                // Fallback สำหรับเปิดทดสอบภายนอกแอป LINE (เช่น บน Browser คอมพิวเตอร์)
                 const d = new Date();
                 document.getElementById('datePicker').value = toLocalISODate(d);
                 setMode('daily');
