@@ -86,9 +86,7 @@
       }
     }
 
-    // --------------------------------------------------------
-    // ฟังก์ชันใหม่: สำหรับกดขยายรูปภาพ
-    // --------------------------------------------------------
+    // ฟังก์ชันสำหรับกดขยายรูปภาพ
     function showFullImage(url, studentName) {
       Swal.fire({
         title: studentName,
@@ -99,7 +97,7 @@
         width: 'auto',
         padding: '1em',
         customClass: {
-          image: 'rounded-xl max-h-[75vh] object-contain', // บังคับไม่ให้รูปล้นจอ
+          image: 'rounded-xl max-h-[75vh] object-contain',
           title: 'text-lg text-indigo-700'
         }
       });
@@ -124,15 +122,15 @@
       studentList.forEach(student => {
         let displayPhotoUrl = '';
         if (student.photoUrl) {
+          // ดึง ID รูปภาพ และสร้างเป็น Direct Link ของ Google Drive ที่ถูกต้อง
           const match = student.photoUrl.match(/[-\w]{25,}/);
           if (match && match[0]) {
-            displayPhotoUrl = `https://lh3.googleusercontent.com/d/$${match[0]}`;
+            displayPhotoUrl = `https://drive.google.com/uc?id=${match[0]}`;
           } else {
             displayPhotoUrl = student.photoUrl;
           }
         }
 
-        // เพิ่ม onclick="showFullImage(...)" และคลาส hover + cursor-pointer เข้าไปที่ <img>
         let photoHtml = displayPhotoUrl 
           ? `<img src="${displayPhotoUrl}" 
                   onclick="showFullImage('${displayPhotoUrl}', '${student.fullName}')" 
@@ -141,13 +139,14 @@
                   onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">` 
           : `<div class="w-full h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs border">ไม่มีรูปถ่ายสถานที่</div>`;
 
+        // สร้างกรอบข้อความแสดงบนแผนที่ (แก้ไขลิงก์ Google Maps ให้ถูกต้อง)
         const popupContent = `
           <div class="p-1 max-w-[200px] font-sans">
             ${photoHtml}
             <div class="text-sm font-bold text-indigo-600 mb-0.5">${student.fullName}</div>
             <div class="text-xs text-gray-600 mb-1"><b>รหัส:</b> ${student.studentId} | <b>ชื่อเล่น:</b> ${student.nickname}</div>
             <div class="text-xs text-gray-700 mb-2"><b>หมู่บ้าน:</b> ${student.village || '-'}</div>
-            <a href="http://maps.google.com/?q=${student.lat},${student.lng}" target="_blank" 
+            <a href="https://www.google.com/maps/dir/?api=1&destination=${student.lat},${student.lng}" target="_blank" 
                class="block text-center bg-green-600 hover:bg-green-700 text-white font-medium text-xs py-1.5 px-3 rounded-md transition no-underline shadow-sm">
                🧭 นำทางด้วย Google Maps
             </a>
