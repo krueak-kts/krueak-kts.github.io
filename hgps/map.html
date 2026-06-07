@@ -121,25 +121,31 @@
 
       studentList.forEach(student => {
         let displayPhotoUrl = '';
+        let fullPhotoUrl = '';
+
         if (student.photoUrl) {
-          // ดึง ID รูปภาพ และสร้างเป็น Direct Link ของ Google Drive ที่ถูกต้อง
+          // ดึง ID ของรูปภาพจากลิงก์ Google Drive
           const match = student.photoUrl.match(/[-\w]{25,}/);
           if (match && match[0]) {
-            displayPhotoUrl = `https://drive.google.com/uc?id=${match[0]}`;
+            // ใช้ Thumbnail API สำหรับรูปเล็กบนแผนที่ (โหลดไว ไม่ติดบล็อก)
+            displayPhotoUrl = `https://drive.google.com/thumbnail?id=${match[0]}&sz=w600`;
+            // ใช้ลิงก์ภาพความละเอียดสูงสำหรับตอนกดซูมภาพ
+            fullPhotoUrl = `https://drive.google.com/thumbnail?id=${match[0]}&sz=w1200`;
           } else {
             displayPhotoUrl = student.photoUrl;
+            fullPhotoUrl = student.photoUrl;
           }
         }
 
         let photoHtml = displayPhotoUrl 
           ? `<img src="${displayPhotoUrl}" 
-                  onclick="showFullImage('${displayPhotoUrl}', '${student.fullName}')" 
+                  onclick="showFullImage('${fullPhotoUrl}', '${student.fullName}')" 
                   class="w-full h-32 object-cover rounded-lg mb-2 border shadow-sm cursor-pointer hover:opacity-80 transition duration-200" 
                   title="คลิกเพื่อดูรูปขยาย" 
                   onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">` 
           : `<div class="w-full h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs border">ไม่มีรูปถ่ายสถานที่</div>`;
 
-        // สร้างกรอบข้อความแสดงบนแผนที่ (แก้ไขลิงก์ Google Maps ให้ถูกต้อง)
+        // สร้างกรอบข้อความแสดงบนแผนที่
         const popupContent = `
           <div class="p-1 max-w-[200px] font-sans">
             ${photoHtml}
