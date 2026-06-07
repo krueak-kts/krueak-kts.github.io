@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบแสดงพิกัดแผนที่นักเรียน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Prompt', sans-serif; }
+    #map { height: 100%; width: 100%; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; }
+  </style>
+</head>
+<body class="bg-gray-50 flex flex-col h-screen overflow-hidden">
+
+  <header class="bg-indigo-600 text-white px-6 py-4 shadow-md flex justify-between items-center z-10">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🗺️</span>
+      <h1 class="text-lg font-bold md:text-xl">ระบบแสดงพิกัดที่ตั้งบ้านนักเรียน</h1>
+    </div>
+    <div id="stats" class="bg-indigo-700 px-4 py-1.5 rounded-full text-xs md:text-sm font-medium">
+      กำลังโหลดข้อมูล...
+    </div>
+  </header>
+
+  <div class="flex flex-1 relative overflow-hidden flex-col md:flex-row">
+    
+    <div class="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r flex flex-col h-52 md:h-full shadow-sm z-10">
+      <div class="p-3 border-b bg-gray-50">
+        <input type="text" id="searchInput" oninput="filterStudents()" 
+               class="w-full px-3 py-2 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+               placeholder="🔍 ค้นหาชื่อ, ชื่อเล่น, หมู่บ้าน...">
+      </div>
+      <div id="studentList" class="flex-1 overflow-y-auto divide-y">
+        <div class="p-4 text-center text-sm text-gray-500">กำลังโหลดรายชื่อนักเรียน...</div>
+      </div>
+    </div>
+    
+    <div class="flex-1 h-full relative">
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script>
+    // --------------------------------------------------------
+    // นำลิงก์ Web App (ที่ลงท้ายด้วย /exec) มาวางในเครื่องหมายคำพูดด้านล่างนี้
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxfIeCA58beRQSJs-_DEfcWUzn3Y9FjyActRsA9MnhaK4uq_O7hLZYSZnEFKtoB3IBlhg/exec";
+    // --------------------------------------------------------
+
+    let map;
+    let markersGroup;
+    let allStudents = [];
+    let markerMap = {};
+
+    // ตั้งค่าเริ่มต้นของแผนที่
+    function initMap() {
+      // ตั้งพิกัดศูนย์กลางเริ่มต้น (ประเทศไทย)
+      map = L.map('map').setView([13.7367, 100.5231], 6);
+
+      // ดึงภาพแผนที่ฟรีจาก OpenStreetMap
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+      }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+    }
+
+    // ดึงพิกัดจากฐานข้อมูล
+    async function loadMarkersData() {
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'getMapData' })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+          displayMarkers(result.data);
+        } else {
+          Swal.fire('ข้อผิดพลาด', result.message, 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อเพื่อดึงพิกัดได้: ' + err.message, 'error');
+      }
+    }
+
+    // นำพิกัดมาปักหมุดและใส่ข้อมูลนักเรียน
+    function displayMarkers(studentList) {
+      markersGroup.clearLayers();
+      allStudents = studentList;
+      markerMap = {};
+      
+      if (studentList.length === 0) {
+        document.getElementById('stats').innerText = 'ไม่พบข้อมูลพิกัด';
+        document.getElementById('studentList').innerHTML = '<div class="p-4 text-center text-sm text-gray-500">ไม่มีข้อมูลพิกัดนักเรียน</div>';
+        return;
+      }
+
+      document.getElementById('stats').innerText = `ปักหมุดแล้ว: ${studentList.length} คน`;
+      renderStudentList(studentList);
+      
+      const latLngs = [];
+
+      studentList.forEach(student => {
+        // แปลงลิงก์ Google Drive ให้สามารถแสดงผลในแท็ก <img> ได้โดยไม่ติดสิทธิ์ล็อก
+        let displayPhotoUrl = '';
+        if (student.photoUrl) {
+          const match = student.photoUrl.match(/[-\w]{25,}/);
+          if (match && match[0]) {
+            displayPhotoUrl = `https://lh3.googleusercontent.com/d/${match[0]}`;
+          } else {
+            displayPhotoUrl = student.photoUrl;
+          }
+        }
+
+        let photoHtml = displayPhotoUrl 
+          ? `<img src="${displayPhotoUrl}" class="w-full h-32 object-cover rounded-lg mb-2 border shadow-sm" onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">` 
+          : `<div class="w-full h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs border">ไม่มีรูปถ่ายสถานที่</div>`;
+
+        // เนื้อหาที่จะแสดงเมื่อคลิกที่หมุด
+        const popupContent = `
+          <div class="p-1 max-w-[200px] font-sans">
+            ${photoHtml}
+            <div class="text-sm font-bold text-indigo-600 mb-0.5">${student.fullName}</div>
+            <div class="text-xs text-gray-600 mb-1"><b>รหัส:</b> ${student.studentId} | <b>ชื่อเล่น:</b> ${student.nickname}</div>
+            <div class="text-xs text-gray-700 mb-2"><b>หมู่บ้าน:</b> ${student.village || '-'}</div>
+            <a href="https://www.google.com/maps/search/?api=1&query=${student.lat},${student.lng}" target="_blank" 
+               class="block text-center bg-green-600 hover:bg-green-700 text-white font-medium text-xs py-1.5 px-3 rounded-md transition no-underline shadow-sm">
+               🧭 นำทางด้วย Google Maps
+            </a>
+          </div>
+        `;
+
+        const marker = L.marker([student.lat, student.lng]).bindPopup(popupContent);
+        markersGroup.addLayer(marker);
+        
+        markerMap[student.studentId] = marker;
+        latLngs.push([student.lat, student.lng]);
+      });
+
+      // ซูมแผนที่ให้ครอบคลุมทุกหมุดโดยอัตโนมัติ
+      if (latLngs.length > 0) {
+        const bounds = L.latLngBounds(latLngs);
+        map.fitBounds(bounds, { padding: [40, 40] });
+      }
+    }
+
+    // สร้างรายชื่อนักเรียนในแถบด้านข้าง
+    function renderStudentList(list) {
+      const container = document.getElementById('studentList');
+      if (list.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">ไม่พบข้อมูล</div>';
+        return;
+      }
+
+      container.innerHTML = list.map(student => `
+        <div onclick="focusStudent('${student.studentId}', ${student.lat}, ${student.lng})" 
+             class="p-3 hover:bg-indigo-50 cursor-pointer transition flex flex-col gap-0.5 text-left text-gray-800">
+          <div class="font-semibold text-sm text-gray-900">${student.fullName} (${student.nickname})</div>
+          <div class="text-xs text-gray-500">รหัสนักเรียน: ${student.studentId}</div>
+          <div class="text-xs text-indigo-600 font-medium">🏠 หมู่บ้าน: ${student.village || 'ไม่ระบุ'}</div>
+        </div>
+      `).join('');
+    }
+
+    // ฟังก์ชันค้นหารายชื่อนักเรียน
+    function filterStudents() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const filtered = allStudents.filter(s => 
+        s.fullName.toLowerCase().includes(query) || 
+        s.studentId.toString().includes(query) ||
+        s.nickname.toLowerCase().includes(query) ||
+        (s.village && s.village.toLowerCase().includes(query))
+      );
+      renderStudentList(filtered);
+    }
+
+    // เมื่อกดเลือกนักเรียนให้แผนที่เลื่อนไปหาและเปิดหน้าต่างข้อมูล
+    function focusStudent(studentId, lat, lng) {
+      map.setView([lat, lng], 16);
+      if (markerMap[studentId]) {
+        markerMap[studentId].openPopup();
+      }
+      
+      // สำหรับบนมือถือ เมื่อกดชื่อแล้วให้เลื่อนหน้าจอลงมาดูแผนที่ทันที
+      if (window.innerWidth < 768) {
+        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    window.onload = () => {
+      initMap();
+      loadMarkersData();
+    };
+  </script>
+</body>
+</html>
