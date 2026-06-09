@@ -1,0 +1,339 @@
+```html
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Student Monitoring System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+  --primary:#1E3A5F;
+  --primary-light:#EEF4FA;
+  --bg:#F8FAFC;
+  --text:#334155;
+  --border:#E2E8F0;
+  --danger:#DC2626;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Kanit',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  min-height:100vh;
+}
+
+.page{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
+}
+
+.card{
+  width:100%;
+  max-width:450px;
+  background:#fff;
+  border-radius:24px;
+  padding:30px 24px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+.logo{
+  width:90px;
+  height:90px;
+  border-radius:50%;
+  margin:auto;
+  background:var(--primary-light);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:42px;
+}
+
+.title{
+  text-align:center;
+  color:var(--primary);
+  font-size:28px;
+  font-weight:700;
+  margin-top:15px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#64748B;
+  line-height:1.7;
+  margin-top:10px;
+}
+
+.input{
+  width:100%;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-top:25px;
+  font-size:16px;
+}
+
+.btn{
+  width:100%;
+  margin-top:15px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:var(--primary);
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.error{
+  display:none;
+  color:var(--danger);
+  text-align:center;
+  margin-top:10px;
+}
+
+#dashboard{
+  display:none;
+}
+
+.menu{
+  margin-top:25px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.menu-item{
+  text-decoration:none;
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:18px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+  transition:.2s;
+}
+
+.menu-item:hover{
+  transform:translateY(-2px);
+  box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
+
+.icon{
+  width:55px;
+  height:55px;
+  border-radius:14px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:24px;
+}
+
+.sdq{background:#EFF6FF;}
+.map{background:#ECFDF5;}
+.chart{background:#FFF7ED;}
+.student{background:#F5F3FF;}
+.summary{background:#F8FAFC;}
+
+.menu-title{
+  font-weight:600;
+  font-size:17px;
+}
+
+.menu-sub{
+  font-size:13px;
+  color:#64748B;
+}
+
+.logout{
+  background:#DC2626;
+  margin-top:20px;
+}
+
+.footer{
+  margin-top:20px;
+  text-align:center;
+  color:#64748B;
+  font-size:13px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="page" id="loginPage">
+  <div class="card">
+
+    <div class="logo">🛡️</div>
+
+    <div class="title">
+      Student Monitoring System
+    </div>
+
+    <div class="subtitle">
+      ระบบติดตามและดูแลช่วยเหลือนักเรียน<br>
+      มัธยมศึกษาปีที่ 1 ปีการศึกษา 2569
+    </div>
+
+    <input
+      type="password"
+      id="password"
+      class="input"
+      placeholder="กรอกรหัสผ่าน"
+    >
+
+    <button class="btn" onclick="login()">
+      เข้าสู่ระบบ
+    </button>
+
+    <div class="error" id="error">
+      รหัสผ่านไม่ถูกต้อง
+    </div>
+
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page" id="dashboard">
+
+  <div class="card">
+
+    <div class="logo">📊</div>
+
+    <div class="title">
+      Student Monitoring System
+    </div>
+
+    <div class="subtitle">
+      Dashboard สำหรับครูและผู้ดูแลระบบ
+    </div>
+
+    <div class="menu">
+
+      <a href="#" class="menu-item">
+        <div class="icon sdq">📊</div>
+        <div>
+          <div class="menu-title">รายงาน SDQ</div>
+          <div class="menu-sub">สรุปผลประเมินรายบุคคล</div>
+        </div>
+      </a>
+
+      <a href="#" class="menu-item">
+        <div class="icon map">🗺️</div>
+        <div>
+          <div class="menu-title">แผนที่บ้านนักเรียน</div>
+          <div class="menu-sub">ตำแหน่งบ้านนักเรียนทั้งหมด</div>
+        </div>
+      </a>
+
+      <a href="#" class="menu-item">
+        <div class="icon chart">📈</div>
+        <div>
+          <div class="menu-title">แผนภูมินักเรียน</div>
+          <div class="menu-sub">สถิติและภาพรวมข้อมูล</div>
+        </div>
+      </a>
+
+      <a href="#" class="menu-item">
+        <div class="icon student">👨‍🎓</div>
+        <div>
+          <div class="menu-title">ข้อมูลนักเรียน</div>
+          <div class="menu-sub">ค้นหาและจัดการข้อมูล</div>
+        </div>
+      </a>
+
+      <a href="#" class="menu-item">
+        <div class="icon summary">📋</div>
+        <div>
+          <div class="menu-title">สรุปข้อมูล</div>
+          <div class="menu-sub">ภาพรวมทั้งระดับชั้น</div>
+        </div>
+      </a>
+
+    </div>
+
+    <button class="btn logout" onclick="logout()">
+      ออกจากระบบ
+    </button>
+
+    <div class="footer">
+      โรงเรียนแม่อ้อวิทยาคม
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+// เปลี่ยนรหัสผ่านตรงนี้
+const PASSWORD = "ADMIN2569";
+
+function login(){
+
+  const pass =
+    document.getElementById("password").value;
+
+  if(pass === PASSWORD){
+
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("dashboard").style.display="flex";
+
+    sessionStorage.setItem(
+      "adminLogin",
+      "true"
+    );
+
+  }else{
+
+    document.getElementById("error").style.display="block";
+  }
+}
+
+function logout(){
+
+  sessionStorage.removeItem("adminLogin");
+  location.reload();
+}
+
+document.getElementById("password")
+.addEventListener("keypress",function(e){
+
+  if(e.key==="Enter"){
+    login();
+  }
+
+});
+
+window.onload=function(){
+
+  if(
+    sessionStorage.getItem("adminLogin")
+    === "true"
+  ){
+    document.getElementById("loginPage").style.display="none";
+    document.getElementById("dashboard").style.display="flex";
+  }
+
+};
+
+</script>
+
+</body>
+</html>
+```
