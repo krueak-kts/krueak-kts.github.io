@@ -1,1807 +1,511 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบประเมิน SDQ</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แบบประเมินพฤติกรรมเด็ก (SDQ)</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+    
+    body { 
+      background-color: #f4f6f9; 
+      font-family: 'Sarabun', sans-serif; 
+      padding: 8px; 
+      font-size: 19px; 
+      color: #212529;
+    }
+    
+    .container { 
+      max-width: 800px; 
+      background: #fff; 
+      padding: 15px; 
+      border-radius: 16px; 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+      margin-bottom: 30px; 
+    }
 
-  :root {
-    --navy: #1a2744;
-    --navy-mid: #243461;
-    --blue: #2e5bba;
-    --blue-light: #4a7fd4;
-    --teal: #1a8fa0;
-    --teal-light: #e6f6f8;
-    --gold: #e8a020;
-    --gold-light: #fef6e4;
-    --green: #1e8a4a;
-    --green-light: #e6f4ec;
-    --orange: #d45a18;
-    --orange-light: #fdf0e8;
-    --red: #c0392b;
-    --red-light: #fdecea;
-    --bg: #f0f4f8;
-    --surface: #ffffff;
-    --border: #d0dae8;
-    --text: #1a2744;
-    --text-mid: #4a5878;
-    --text-light: #7a8aaa;
-    --shadow: 0 2px 12px rgba(26,39,68,0.10);
-    --shadow-lg: 0 8px 32px rgba(26,39,68,0.14);
-    --r: 10px;
-    --r-lg: 16px;
-  }
+    .question-card {
+      background: #ffffff;
+      border: 2px solid #e9ecef;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8 rgba(0,0,0,0.02);
+    }
+    
+    .radio-label {
+      display: flex;
+      align-items: center;
+      padding: 18px 20px; 
+      margin: 6px 0;
+      background: #f8f9fa;
+      border: 2px solid #ced4da;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+    
+    .radio-label:hover { 
+      background: #e9f1fe; 
+      border-color: #0d6efd; 
+    }
+    
+    input[type="radio"] { 
+      transform: scale(1.8); 
+      margin-right: 18px; 
+      flex-shrink: 0; 
+      cursor: pointer;
+    }
+    
+    .radio-text { 
+      font-size: 1.2rem; 
+      font-weight: 600;
+      color: #495057; 
+    }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+    .radio-label:has(input[type="radio"]:checked) {
+      background-color: #e7f1ff;
+      border-color: #0d6efd;
+      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+    }
+    input[type="radio"]:checked + .radio-text {
+      color: #0d6efd;
+      font-weight: 700;
+    }
 
-  body {
-    font-family: 'Sarabun', 'IBM Plex Sans Thai', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 15px;
-    line-height: 1.6;
-    min-height: 100vh;
-  }
+    .role-box { 
+      border: 2px solid #dee2e6; 
+      border-radius: 16px; 
+      padding: 30px 15px; 
+      text-align: center; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+      background: #fff; 
+      height: 100%; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    }
+    .role-box:hover, .role-box:active { 
+      border-color: #0d6efd; 
+      background-color: #e7f1ff; 
+      transform: translateY(-3px); 
+    }
+    .stat-badge { 
+      font-size: 1.05rem; 
+      padding: 10px; 
+      background: #f8f9fa; 
+      border-radius: 10px; 
+      margin-top: 15px; 
+      border: 1px dashed #bcc1c4; 
+    }
 
-  /* === TOP BAR === */
-  .topbar {
-    background: var(--navy);
-    color: white;
-    padding: 0 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  }
-  .topbar-logo {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .topbar-logo span {
-    background: var(--teal);
-    color: white;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 2px 10px;
-    border-radius: 20px;
-    letter-spacing: 1px;
-  }
-  .topbar-nav {
-    display: flex;
-    gap: 4px;
-    margin-left: auto;
-  }
-  .topbar-btn {
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.7);
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: inherit;
-    font-weight: 500;
-    transition: all 0.15s;
-  }
-  .topbar-btn:hover, .topbar-btn.active {
-    background: rgba(255,255,255,0.12);
-    color: white;
-  }
-  .topbar-btn.active {
-    background: var(--teal);
-    color: white;
-  }
+    .section-title { 
+      background: #0d6efd; 
+      color: white; 
+      padding: 15px; 
+      border-radius: 10px; 
+      margin-top: 40px; 
+      margin-bottom: 25px; 
+      font-size: 1.4rem;
+      font-weight: bold;
+    }
 
-  /* === VIEWS === */
-  .view { display: none; max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
-  .view.active { display: block; }
-
-  /* === HERO === */
-  .hero {
-    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, var(--blue) 100%);
-    color: white;
-    border-radius: var(--r-lg);
-    padding: 36px 40px;
-    margin-bottom: 28px;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute;
-    right: -40px; top: -40px;
-    width: 220px; height: 220px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.05);
-  }
-  .hero::after {
-    content: '';
-    position: absolute;
-    right: 60px; bottom: -60px;
-    width: 150px; height: 150px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.04);
-  }
-  .hero h1 { font-size: 26px; font-weight: 700; margin-bottom: 6px; }
-  .hero p { color: rgba(255,255,255,0.75); font-size: 15px; max-width: 540px; }
-  .hero-badges {
-    display: flex;
-    gap: 10px;
-    margin-top: 18px;
-    flex-wrap: wrap;
-  }
-  .hero-badge {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.9);
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  /* === CARDS GRID === */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-  .card {
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow);
-    padding: 24px;
-    border: 1px solid var(--border);
-  }
-  .card-action {
-    cursor: pointer;
-    transition: all 0.18s;
-  }
-  .card-action:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-2px);
-    border-color: var(--blue-light);
-  }
-  .card-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    margin-bottom: 14px;
-  }
-  .card h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: var(--navy); }
-  .card p { font-size: 13.5px; color: var(--text-mid); line-height: 1.5; }
-  .card-meta { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .chip {
-    font-size: 12px;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-weight: 500;
-    background: var(--bg);
-    color: var(--text-mid);
-    border: 1px solid var(--border);
-  }
-  .chip-blue { background: #e8f0fc; color: var(--blue); border-color: #c0d4f5; }
-  .chip-teal { background: var(--teal-light); color: var(--teal); border-color: #b0dde5; }
-  .chip-gold { background: var(--gold-light); color: #9a6600; border-color: #f0d080; }
-
-  /* === SECTION TITLE === */
-  .section-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* === FORM CARD === */
-  .form-card {
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow);
-    padding: 28px 32px;
-    border: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  .form-group label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-mid);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
-  .form-group input, .form-group select {
-    width: 100%;
-    padding: 9px 13px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-    color: var(--text);
-    background: white;
-    transition: border-color 0.15s;
-    outline: none;
-  }
-  .form-group input:focus, .form-group select:focus {
-    border-color: var(--blue);
-    box-shadow: 0 0 0 3px rgba(46,91,186,0.1);
-  }
-
-  /* === QUESTION TABLE === */
-  .q-section {
-    margin-bottom: 28px;
-  }
-  .q-section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--navy);
-    color: white;
-    padding: 10px 18px;
-    border-radius: 8px 8px 0 0;
-    font-weight: 700;
-    font-size: 15px;
-  }
-  .q-section-num {
-    background: var(--teal);
-    color: white;
-    width: 26px; height: 26px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-  }
-  .q-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border: 1px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    overflow: hidden;
-  }
-  .q-table th {
-    background: #f0f4f8;
-    padding: 9px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-mid);
-    text-align: center;
-    border-bottom: 1px solid var(--border);
-  }
-  .q-table th:first-child { text-align: left; }
-  .q-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid #eef2f7;
-    font-size: 14.5px;
-    vertical-align: middle;
-  }
-  .q-table td:not(:first-child) { text-align: center; }
-  .q-table tr:last-child td { border-bottom: none; }
-  .q-table tr:hover td { background: #f8fbff; }
-  .q-num { color: var(--text-light); font-size: 13px; font-weight: 600; margin-right: 8px; }
-  .q-reverse { color: var(--teal); font-size: 11px; font-weight: 600; margin-left: 6px; }
-
-  .radio-group { display: flex; gap: 0; justify-content: center; }
-  .radio-option { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .radio-option input[type="radio"] { display: none; }
-  .radio-label {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--border);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-light);
-    transition: all 0.15s;
-    background: #f8fafc;
-  }
-  .radio-option:nth-child(1) input:checked + .radio-label { background: var(--green); border-color: var(--green); color: white; }
-  .radio-option:nth-child(2) input:checked + .radio-label { background: var(--gold); border-color: var(--gold); color: white; }
-  .radio-option:nth-child(3) input:checked + .radio-label { background: var(--red); border-color: var(--red); color: white; }
-  .radio-label:hover { border-color: var(--blue); background: var(--teal-light); }
-
-  /* === IMPACT SECTION === */
-  .impact-section {
-    background: #f8f9fb;
-    border: 1px solid var(--border);
-    border-radius: var(--r);
-    padding: 20px 24px;
-    margin-top: 20px;
-  }
-  .impact-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--navy);
-    margin-bottom: 16px;
-  }
-  .impact-q {
-    margin-bottom: 14px;
-  }
-  .impact-q label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    display: block;
-    margin-bottom: 8px;
-  }
-  .impact-opts {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .impact-opt {
-    flex: 1;
-    min-width: 100px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13.5px;
-    color: var(--text);
-    background: white;
-    transition: all 0.13s;
-  }
-  .impact-opt:hover { border-color: var(--blue-light); background: #f0f5fd; }
-  .impact-opt input { accent-color: var(--blue); }
-  .impact-rate-row {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 0;
-    border-bottom: 1px solid #eef2f7;
-  }
-  .impact-rate-row:last-child { border-bottom: none; }
-  .impact-rate-opts { display: flex; gap: 8px; }
-  .rate-btn {
-    padding: 5px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12.5px;
-    font-family: inherit;
-    font-weight: 500;
-    background: white;
-    color: var(--text-mid);
-    transition: all 0.13s;
-  }
-  .rate-btn:hover { border-color: var(--blue-light); }
-  .rate-btn.sel { background: var(--blue); border-color: var(--blue); color: white; }
-
-  /* === ACTIONS BAR === */
-  .actions-bar {
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 28px;
-    flex-wrap: wrap;
-  }
-  .btn {
-    padding: 10px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    font-family: inherit;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .btn-primary { background: var(--blue); color: white; }
-  .btn-primary:hover { background: var(--navy); }
-  .btn-secondary { background: var(--bg); color: var(--navy); border: 1.5px solid var(--border); }
-  .btn-secondary:hover { background: var(--border); }
-  .btn-teal { background: var(--teal); color: white; }
-  .btn-teal:hover { background: #147a8a; }
-  .btn-sm { padding: 6px 14px; font-size: 13px; }
-
-  /* === RESULT CARD === */
-  .result-card {
-    background: var(--surface);
-    border-radius: var(--r-lg);
-    box-shadow: var(--shadow-lg);
-    padding: 28px 32px;
-    border: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .result-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .result-name { font-size: 22px; font-weight: 700; color: var(--navy); }
-  .result-meta { font-size: 14px; color: var(--text-mid); margin-top: 3px; }
-  .result-overall {
-    text-align: center;
-    padding: 14px 24px;
-    border-radius: 10px;
-    font-weight: 700;
-  }
-  .result-overall .label { font-size: 12px; font-weight: 500; opacity: 0.8; }
-  .result-overall .value { font-size: 28px; font-weight: 800; }
-  .result-overall .status { font-size: 14px; font-weight: 700; margin-top: 2px; }
-  .status-normal { background: var(--green-light); color: var(--green); }
-  .status-risk { background: var(--gold-light); color: var(--gold); }
-  .status-problem { background: var(--red-light); color: var(--red); }
-
-  .dimensions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .dim-card {
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 14px 16px;
-    border: 1.5px solid var(--border);
-  }
-  .dim-card.problem { border-color: var(--red); background: var(--red-light); }
-  .dim-card.risk { border-color: var(--gold); background: var(--gold-light); }
-  .dim-card.normal { border-color: #b0d8c0; background: var(--green-light); }
-  .dim-label { font-size: 12px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px; }
-  .dim-score { font-size: 26px; font-weight: 800; color: var(--navy); line-height: 1; }
-  .dim-status { font-size: 12px; font-weight: 700; margin-top: 4px; }
-  .dim-card.problem .dim-status { color: var(--red); }
-  .dim-card.risk .dim-status { color: #9a6600; }
-  .dim-card.normal .dim-status { color: var(--green); }
-
-  /* === TABLE VIEW === */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    border-radius: var(--r);
-    overflow: hidden;
-    box-shadow: var(--shadow);
-    border: 1px solid var(--border);
-  }
-  .data-table th {
-    background: var(--navy);
-    color: white;
-    padding: 11px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: left;
-    white-space: nowrap;
-  }
-  .data-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid #eef2f7;
-    font-size: 14px;
-    vertical-align: middle;
-  }
-  .data-table tr:last-child td { border-bottom: none; }
-  .data-table tr:hover td { background: #f6f9fd; }
-  .badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .badge-normal { background: var(--green-light); color: var(--green); }
-  .badge-risk { background: var(--gold-light); color: #9a6600; }
-  .badge-problem { background: var(--red-light); color: var(--red); }
-  .badge-strength { background: #e8f0fc; color: var(--blue); }
-  .badge-no-strength { background: #f0f0f5; color: #888; }
-
-  /* === TABS === */
-  .tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 24px;
-  }
-  .tab-btn {
-    padding: 10px 20px;
-    border: none;
-    background: transparent;
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-mid);
-    cursor: pointer;
-    border-bottom: 2.5px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.13s;
-  }
-  .tab-btn:hover { color: var(--blue); }
-  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
-  .tab-pane { display: none; }
-  .tab-pane.active { display: block; }
-
-  /* === STATS BAR === */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .stat-box {
-    background: white;
-    border-radius: var(--r);
-    padding: 16px 18px;
-    border: 1px solid var(--border);
-    text-align: center;
-    box-shadow: var(--shadow);
-  }
-  .stat-num { font-size: 28px; font-weight: 800; color: var(--navy); line-height: 1; }
-  .stat-label { font-size: 12px; color: var(--text-mid); margin-top: 5px; font-weight: 500; }
-  .stat-box.green .stat-num { color: var(--green); }
-  .stat-box.gold .stat-num { color: var(--gold); }
-  .stat-box.red .stat-num { color: var(--red); }
-
-  /* === CHART BAR === */
-  .bar-chart { margin: 10px 0; }
-  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-  .bar-label { font-size: 13px; width: 160px; flex-shrink: 0; color: var(--text); }
-  .bar-track { flex: 1; background: #eef2f7; border-radius: 4px; height: 18px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; min-width: 4px; }
-  .bar-fill.green { background: var(--green); }
-  .bar-fill.gold { background: var(--gold); }
-  .bar-fill.red { background: var(--red); }
-  .bar-val { font-size: 13px; font-weight: 700; width: 28px; text-align: right; color: var(--text-mid); }
-
-  /* === MODAL === */
-  .modal-bg {
-    display: none;
-    position: fixed; inset: 0;
-    background: rgba(10,20,50,0.5);
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  .modal-bg.open { display: flex; }
-  .modal {
-    background: white;
-    border-radius: var(--r-lg);
-    max-width: 700px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  }
-  .modal-header {
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .modal-title { font-size: 18px; font-weight: 700; color: var(--navy); }
-  .modal-close {
-    background: none; border: none; cursor: pointer;
-    font-size: 22px; color: var(--text-light); line-height: 1;
-    padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .modal-close:hover { background: var(--bg); color: var(--text); }
-  .modal-body { padding: 20px 24px 24px; }
-
-  /* === MANAGE STUDENTS === */
-  .student-list-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: white;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin-bottom: 8px;
-  }
-  .student-list-item .name { flex: 1; font-weight: 600; font-size: 14px; }
-  .student-list-item .class { font-size: 13px; color: var(--text-mid); }
-
-  .alert {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .alert-info { background: var(--teal-light); color: var(--teal); border: 1px solid #b0dde5; }
-  .alert-success { background: var(--green-light); color: var(--green); border: 1px solid #b0d8c0; }
-
-  .empty-state {
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--text-light);
-  }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-  .empty-state p { font-size: 15px; }
-
-  .filter-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  .filter-row select, .filter-row input {
-    padding: 7px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--text);
-    background: white;
-    outline: none;
-  }
-  .filter-row select:focus, .filter-row input:focus { border-color: var(--blue); }
-
-  @media (max-width: 600px) {
-    .hero { padding: 24px 20px; }
-    .hero h1 { font-size: 20px; }
-    .form-card { padding: 18px; }
-    .q-table th, .q-table td { padding: 8px 8px; font-size: 13px; }
-    .radio-label { width: 30px; height: 30px; }
-    .result-card { padding: 18px; }
-    .data-table th, .data-table td { padding: 8px 10px; font-size: 13px; }
-    .topbar-logo span { display: none; }
-  }
-</style>
+    @media (min-width: 768px) {
+      body { padding: 20px; }
+      .container { padding: 40px; }
+    }
+  </style>
 </head>
 <body>
-
-<div class="topbar">
-  <div class="topbar-logo">📋 SDQ <span>ระบบประเมิน</span></div>
-  <div class="topbar-nav">
-    <button class="topbar-btn active" onclick="switchView('home')">หน้าหลัก</button>
-    <button class="topbar-btn" onclick="switchView('assess')">ประเมิน</button>
-    <button class="topbar-btn" onclick="switchView('results')">ผลลัพธ์</button>
-    <button class="topbar-btn" onclick="switchView('class-summary')">สรุปรายชั้น</button>
-    <button class="topbar-btn" onclick="switchView('manage')">จัดการ</button>
-  </div>
-</div>
-
-<!-- HOME VIEW -->
-<div class="view active" id="view-home">
-  <div class="hero">
-    <h1>ระบบประเมินพฤติกรรมเด็ก SDQ</h1>
-    <p>Strengths and Difficulties Questionnaire — ประเมินพฤติกรรม 5 ด้าน สำหรับครู ผู้ปกครอง และนักเรียนประเมินตนเอง</p>
-    <div class="hero-badges">
-      <div class="hero-badge">25 ข้อคำถาม</div>
-      <div class="hero-badge">5 ด้านพฤติกรรม</div>
-      <div class="hero-badge">3 ผู้ประเมิน</div>
-      <div class="hero-badge">สรุปรายคน & รายชั้น</div>
-    </div>
-  </div>
-
-  <div class="section-title">เริ่มประเมิน</div>
-  <div class="cards-grid">
-    <div class="card card-action" onclick="startAssessment('teacher')">
-      <div class="card-icon" style="background:#e8f0fc">👩‍🏫</div>
-      <h3>ครูประเมินนักเรียน</h3>
-      <p>ครูที่ปรึกษาประเมินพฤติกรรมนักเรียนในช่วง 6 เดือนที่ผ่านมา</p>
-      <div class="card-meta">
-        <span class="chip chip-blue">ฉบับครู</span>
-        <span class="chip">25 ข้อ</span>
+  <div class="container">
+    <h2 class="text-center mb-1 fw-bold text-primary">แบบประเมินพฤติกรรมเด็ก (SDQ)</h2>
+    <p class="text-center text-muted mb-4 fs-4">ระบบดูแลช่วยเหลือนักเรียน</p>
+    
+    <div id="step1_role" class="mb-2">
+      <h4 class="text-center mb-4 text-secondary fw-bold">กรุณาเลือกสถานะของผู้ประเมิน</h4>
+      <div class="row g-3">
+        <div class="col-12 col-md-4">
+          <div class="role-box" onclick="selectRole('ครู')">
+            <h1 class="display-2 mb-2">👨‍🏫</h1><h3 class="mb-0 fw-bold">ครูประเมิน</h3>
+            <div class="stat-badge" id="stat-ครู">กำลังโหลดยอด...</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="role-box" onclick="selectRole('ผู้ปกครอง')">
+            <h1 class="display-2 mb-2">👨‍👩‍👦</h1><h3 class="mb-0 fw-bold">ผู้ปกครองประเมิน</h3>
+            <div class="stat-badge" id="stat-ผู้ปกครอง">กำลังโหลดยอด...</div>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="role-box" onclick="selectRole('นักเรียน')">
+            <h1 class="display-2 mb-2">🎒</h1><h3 class="mb-0 fw-bold">นักเรียนประเมิน</h3>
+            <div class="stat-badge" id="stat-นักเรียน">กำลังโหลดยอด...</div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="card card-action" onclick="startAssessment('parent')">
-      <div class="card-icon" style="background:#fef0e6">👨‍👩‍👧</div>
-      <h3>ผู้ปกครองประเมิน</h3>
-      <p>พ่อแม่หรือผู้ปกครองประเมินพฤติกรรมบุตรหลานในช่วง 6 เดือนที่ผ่านมา</p>
-      <div class="card-meta">
-        <span class="chip chip-gold">ฉบับผู้ปกครอง</span>
-        <span class="chip">25 ข้อ</span>
-      </div>
-    </div>
-    <div class="card card-action" onclick="startAssessment('student')">
-      <div class="card-icon" style="background:#e6f4ec">🎒</div>
-      <h3>นักเรียนประเมินตนเอง</h3>
-      <p>นักเรียนประเมินพฤติกรรมของตนเองในช่วง 6 เดือนที่ผ่านมา</p>
-      <div class="card-meta">
-        <span class="chip chip-teal">ฉบับนักเรียน</span>
-        <span class="chip">25 ข้อ</span>
-      </div>
-    </div>
-  </div>
 
-  <div class="section-title">ภาพรวมข้อมูล</div>
-  <div id="home-stats" class="stats-row">
-    <div class="stat-box"><div class="stat-num" id="stat-total">0</div><div class="stat-label">การประเมินทั้งหมด</div></div>
-    <div class="stat-box green"><div class="stat-num" id="stat-normal">0</div><div class="stat-label">ปกติ</div></div>
-    <div class="stat-box gold"><div class="stat-num" id="stat-risk">0</div><div class="stat-label">เสี่ยง</div></div>
-    <div class="stat-box red"><div class="stat-num" id="stat-problem">0</div><div class="stat-label">มีปัญหา</div></div>
-  </div>
-  <div id="home-recent"></div>
-</div>
+    <form id="sdqForm" onsubmit="submitForm(event)">
+      <input type="hidden" name="action" value="saveData">
+      <input type="hidden" name="role" id="userRole">
 
-<!-- ASSESS VIEW -->
-<div class="view" id="view-assess">
-  <div id="assess-content"></div>
-</div>
+      <div id="step3_questionnaire" style="display: none;">
+        <div class="text-end mb-3">
+          <button type="button" class="btn btn-secondary btn-lg px-4 py-2" onclick="resetView()" style="font-size: 1.1rem;">
+            ⬅️ ย้อนกลับ / เปลี่ยนคน
+          </button>
+        </div>
 
-<!-- RESULTS VIEW -->
-<div class="view" id="view-results">
-  <div class="section-title">ผลการประเมินรายคน</div>
-  <div class="filter-row">
-    <select id="filter-class" onchange="renderResults()">
-      <option value="">ทุกชั้น</option>
-    </select>
-    <select id="filter-type" onchange="renderResults()">
-      <option value="">ทุกผู้ประเมิน</option>
-      <option value="teacher">ครู</option>
-      <option value="parent">ผู้ปกครอง</option>
-      <option value="student">นักเรียน</option>
-    </select>
-    <select id="filter-status" onchange="renderResults()">
-      <option value="">ทุกสถานะ</option>
-      <option value="ปกติ">ปกติ</option>
-      <option value="เสี่ยง">เสี่ยง</option>
-      <option value="มีปัญหา">มีปัญหา</option>
-    </select>
-    <button class="btn btn-secondary btn-sm" onclick="renderResults()">🔄 รีเฟรช</button>
-  </div>
-  <div id="results-content"></div>
-</div>
+        <div class="row g-3 mb-4 bg-light p-3 p-md-4 rounded border border-2 border-primary border-opacity-25 shadow-sm">
+          <h4 class="text-primary border-bottom border-primary border-opacity-25 pb-2 mb-2 fw-bold">
+            👤 ข้อมูลนักเรียนที่รับการประเมิน
+          </h4>
+          <div class="col-md-6"><label class="text-muted fw-bold">ชื่อ-นามสกุล</label><input type="text" class="form-control form-control-lg bg-white fw-bold fs-5" name="fullName" id="fullName" readonly required></div>
+          <div class="col-md-6"><label class="text-muted fw-bold">ชื่อเล่น</label><input type="text" class="form-control form-control-lg bg-white fw-bold fs-5" name="nickname" id="nickname" readonly required></div>
+          <div class="col-6 col-md-4"><label class="text-muted fw-bold">ชั้น</label><input type="text" class="form-control form-control-lg bg-white fw-bold fs-5" name="className" id="className" readonly required></div>
+          <div class="col-6 col-md-4"><label class="text-muted fw-bold">เลขที่</label><input type="number" class="form-control form-control-lg bg-white fw-bold fs-5" name="studentNo" id="studentNo" readonly required></div>
+          <div class="col-12 col-md-4"><label class="text-muted fw-bold">วัน/เดือน/ปีเกิด</label><input type="text" class="form-control form-control-lg bg-white fw-bold fs-5" name="dob" id="dob" readonly required></div>
+        </div>
 
-<!-- CLASS SUMMARY VIEW -->
-<div class="view" id="view-class-summary">
-  <div class="section-title">สรุปผลรายชั้น</div>
-  <div class="filter-row">
-    <select id="class-filter" onchange="renderClassSummary()">
-      <option value="">ทุกชั้น</option>
-    </select>
-    <select id="class-type-filter" onchange="renderClassSummary()">
-      <option value="">ทุกผู้ประเมิน</option>
-      <option value="teacher">ครู</option>
-      <option value="parent">ผู้ปกครอง</option>
-      <option value="student">นักเรียน</option>
-    </select>
-  </div>
-  <div id="class-summary-content"></div>
-</div>
+        <div class="alert alert-warning border-warning border-opacity-50 shadow-sm fs-5 fw-bold text-dark mb-4">
+          📌 คำชี้แจง: กรุณาเลือกคำตอบที่ตรงกับพฤติกรรมของเด็กในช่วง "6 เดือน" ที่ผ่านมา
+        </div>
 
-<!-- MANAGE VIEW -->
-<div class="view" id="view-manage">
-  <div class="section-title">จัดการข้อมูลนักเรียน</div>
-  <div class="form-card">
-    <div class="form-row">
-      <div class="form-group">
-        <label>ชื่อ-สกุล</label>
-        <input type="text" id="mg-name" placeholder="เช่น ด.ช.สมชาย ใจดี">
-      </div>
-      <div class="form-group">
-        <label>ชื่อเล่น</label>
-        <input type="text" id="mg-nick" placeholder="เช่น แบงค์">
-      </div>
-      <div class="form-group">
-        <label>ชั้นเรียน</label>
-        <input type="text" id="mg-class" placeholder="เช่น ป.3/1">
-      </div>
-      <div class="form-group">
-        <label>เลขที่</label>
-        <input type="number" id="mg-num" placeholder="1">
-      </div>
-    </div>
-    <div class="actions-bar" style="margin-top:0">
-      <button class="btn btn-primary" onclick="addStudent()">➕ เพิ่มนักเรียน</button>
-    </div>
-  </div>
-  <div id="student-list"></div>
-  <div style="margin-top:20px">
-    <button class="btn btn-secondary btn-sm" onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด</button>
-  </div>
-</div>
+        <div id="questionsContainer"></div>
 
-<!-- MODAL: Assessment result -->
-<div class="modal-bg" id="result-modal">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">ผลการประเมิน SDQ</div>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <div class="modal-body" id="modal-result-body"></div>
-  </div>
-</div>
+        <h4 class="section-title shadow-sm mt-5">ด้านหลัง (ประเมินปัญหาเพิ่มเติม)</h4>
+        
+        <div class="mb-4 p-3 p-md-4 border rounded bg-light">
+          <label class="fw-bold fs-4 text-dark">1. โดยรวมคุณคิดว่าเด็กมีปัญหาในด้านอารมณ์ สมาธิ พฤติกรรม หรือความสามารถเข้ากับผู้อื่นหรือไม่ ?</label>
+          <select class="form-select form-select-lg mt-3 border-2 border-primary fs-5" name="b1" id="b1" onchange="toggleBackQuestions()" required style="padding: 12px;">
+            <option value="">-- แตะเพื่อเลือกคำตอบ --</option>
+            <option value="ไม่">ไม่มีปัญหาเลย</option>
+            <option value="ใช่ มีปัญหาเล็กน้อย">ใช่ มีปัญหาเล็กน้อย</option>
+            <option value="ใช่ มีปัญหาชัดเจน">ใช่ มีปัญหาชัดเจน</option>
+            <option value="ใช่ มีปัญหาอย่างมาก">ใช่ มีปัญหาอย่างมาก</option>
+          </select>
+        </div>
 
-<script>
-// ============================================================
-//  CONFIG — Google Sheets
-// ============================================================
-const GS_URL = 'https://script.google.com/macros/s/AKfycbyk8GkRs1akrWFgw-mqwMYSk8v2L9fItHl8VT6egTbJXVe47C2wEZi6ox4p-Nd7b1eR/exec';
-
-// ============================================================
-//  IN-MEMORY CACHE  (โหลดจาก Sheets ครั้งเดียว แล้วเก็บไว้)
-// ============================================================
-let _cache = null;   // { students: [], assessments: [] }
-let _loading = false;
-let _loadCallbacks = [];
-
-function getCache() { return _cache || { students: [], assessments: [] }; }
-
-// โหลดข้อมูลทั้งหมดจาก Sheets (ครั้งแรก หรือเมื่อ refresh)
-async function fetchAll() {
-  showSpinner(true);
-  try {
-    const [students, assessments] = await Promise.all([
-      gsGet('getStudents'),
-      gsGet('getAssessments'),
-    ]);
-    _cache = { students, assessments };
-  } catch(e) {
-    console.error('fetchAll error', e);
-    _cache = _cache || { students: [], assessments: [] };
-    showToast('⚠️ เชื่อมต่อ Google Sheets ไม่ได้ ใช้ข้อมูล cache เดิม', 'warn');
-  } finally {
-    showSpinner(false);
-  }
-}
-
-// ============================================================
-// GOOGLE SHEETS API HELPERS
-// ============================================================
-
-async function gsGet(action, params = {}) {
-  const qs = new URLSearchParams({ action, ...params }).toString();
-  // เพิ่ม redirect: 'follow' เพื่อให้ fetch ตามการเปลี่ยนหน้าของ Google
-  const res = await fetch(`${GS_URL}?${qs}`, {
-    method: 'GET',
-    redirect: 'follow' 
-  }); 
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
-}
-
-async function gsPost(body) {
-  const res = await fetch(GS_URL, {
-    method: 'POST',
-    // ใช้ text/plain ถูกต้องแล้วเพื่อป้องกันปัญหา CORS
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-    redirect: 'follow' // เพิ่มบรรทัดนี้
-  });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  return res.json();
-}
-
-
-
-// ============================================================
-//  CRUD — Students
-// ============================================================
-async function addStudentToSheet(student) {
-  await gsPost({ action: 'saveStudent', ...student });
-  _cache.students.push(student);
-}
-
-async function deleteStudentFromSheet(id) {
-  await gsPost({ action: 'deleteStudent', id });
-  _cache.students = _cache.students.filter(s => s.id !== id);
-}
-
-// ============================================================
-//  CRUD — Assessments
-// ============================================================
-async function saveAssessmentToSheet(record) {
-  await gsPost({ action: 'saveAssessment', record });
-  _cache.assessments.push(record);
-}
-
-async function deleteAssessmentFromSheet(id) {
-  await gsPost({ action: 'deleteAssessment', id });
-  _cache.assessments = _cache.assessments.filter(a => a.id !== id);
-}
-
-// ============================================================
-//  UI HELPERS
-// ============================================================
-function showSpinner(on) {
-  let el = document.getElementById('gs-spinner');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'gs-spinner';
-    el.style.cssText = `position:fixed;bottom:20px;right:20px;z-index:999;
-      background:var(--navy);color:white;padding:10px 18px;border-radius:24px;
-      font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;
-      box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity 0.2s;`;
-    el.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);
-      border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite"></span> กำลังโหลด...`;
-    document.body.appendChild(el);
-    if (!document.getElementById('spin-style')) {
-      const s = document.createElement('style');
-      s.id = 'spin-style';
-      s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
-      document.head.appendChild(s);
-    }
-  }
-  el.style.opacity = on ? '1' : '0';
-  el.style.pointerEvents = on ? 'auto' : 'none';
-}
-
-function showToast(msg, type = 'ok') {
-  const colors = { ok: 'var(--green)', warn: 'var(--gold)', err: 'var(--red)' };
-  const t = document.createElement('div');
-  t.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:1000;
-    background:${colors[type]||colors.ok};color:white;padding:10px 22px;border-radius:24px;
-    font-size:14px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.2);
-    animation:fadeInUp 0.2s ease;`;
-  t.textContent = msg;
-  if (!document.getElementById('toast-style')) {
-    const s = document.createElement('style');
-    s.id = 'toast-style';
-    s.textContent = '@keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
-    document.head.appendChild(s);
-  }
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
-}
-
-// compat shim — ฟังก์ชันเดิมที่เรียก loadData() จะได้ cache แทน
-function loadData() { return getCache(); }
-
-// ============================================================
-//  SDQ CONFIGURATION
-// ============================================================
-const DIMENSIONS = [
-  { id: 1, name: 'ด้านอารมณ์', items: [3,8,13,16,24], reverse: [] },
-  { id: 2, name: 'พฤติกรรมเกเร', items: [5,7,12,18,22], reverse: [7] },
-  { id: 3, name: 'ไม่อยู่นิ่ง', items: [2,10,15,21,25], reverse: [21,25] },
-  { id: 4, name: 'ความสัมพันธ์เพื่อน', items: [6,11,14,19,23], reverse: [11,14] },
-  { id: 5, name: 'สัมพันธภาพทางสังคม', items: [1,4,9,17,20], reverse: [] },
-];
-
-// Thresholds: [normal_max, risk_val]  (above risk = problem)
-const THRESHOLDS = {
-  teacher: {
-    1: [3,4], 2: [3,4], 3: [5,6], 4: [5,6], 5: null,
-    total: [15,16]  // total of dim 1-4
-  },
-  parent: {
-    1: [3,4], 2: [3,4], 3: [5,6], 4: [5,6], 5: null,
-    total: [15,16]
-  },
-  student: {
-    1: [5,6], 2: [4,5], 3: [5,6], 4: [3,4], 5: null,
-    total: [16,17]
-  }
-};
-
-// Impact scoring thresholds: 0=normal, 1-2=risk, 3-10=problem
-const IMPACT_THRESHOLD = { total: [0,0,2] }; // [normal_max, risk_max]
-
-const QUESTIONS = {
-  teacher: [
-    { n:1,  text:'ห่วงใยความรู้สึกคนอื่น' },
-    { n:2,  text:'อยู่ไม่นิ่ง  นั่งนิ่งๆ ไม่ได้' },
-    { n:3,  text:'มักจะบ่นว่าปวดศีรษะ  ปวดท้อง' },
-    { n:4,  text:'เต็มใจแบ่งปันสิ่งของให้เพื่อน (ขนม, ของเล่น, ดินสอ เป็นต้น)' },
-    { n:5,  text:'มักจะอาละวาด หรือโมโหร้าย' },
-    { n:6,  text:'ค่อนข้างแยกตัว  ชอบเล่นคนเดียว' },
-    { n:7,  text:'เชื่อฟัง  มักจะทำตามที่ผู้ใหญ่ต้องการ' },
-    { n:8,  text:'กังวลใจหลายเรื่อง  ดูกังวลเสมอ' },
-    { n:9,  text:'เป็นที่พึ่งได้เวลาที่คนอื่นเสียใจ  อารมณ์ไม่ดี  หรือไม่สบายใจ' },
-    { n:10, text:'อยู่ไม่สุข  วุ่นวายอย่างมาก' },
-    { n:11, text:'มีเพื่อนสนิท' },
-    { n:12, text:'มักจะมีเรื่องทะเลาะวิวาทกับเด็กอื่น  หรือรังแกเด็กอื่น' },
-    { n:13, text:'ดูไม่มีความสุข  ท้อแท้' },
-    { n:14, text:'เป็นที่ชื่นชอบของเพื่อน' },
-    { n:15, text:'วอกแวกง่าย  สมาธิสั้น' },
-    { n:16, text:'เครียดไม่ยอมห่างเวลาอยู่ในสถานการณ์ที่ไม่คุ้น  และขาดความมั่นใจในตนเอง' },
-    { n:17, text:'ใจดีกับเด็กที่เล็กกว่า' },
-    { n:18, text:'ชอบโกหก  หรือขี้โกง' },
-    { n:19, text:'ถูกเด็กคนอื่นล้อเลียนหรือรังแก' },
-    { n:20, text:'ชอบอาสาช่วยเหลือผู้อื่น  (พ่อ, แม่, ครู, เด็กคนอื่น)' },
-    { n:21, text:'คิดก่อนทำ' },
-    { n:22, text:'ขโมยของที่บ้าน  ที่โรงเรียนหรือที่อื่น' },
-    { n:23, text:'เข้ากับผู้ใหญ่ได้ดีกว่าเด็กวัยเดียวกัน' },
-    { n:24, text:'ขี้กลัว  รู้สึกหวาดกลัวได้ง่าย' },
-    { n:25, text:'ทำงานได้จนเสร็จ มีความตั้งอกตั้งใจในการทำงาน' },
-  ],
-  student: [
-    { n:1,  text:'ฉันพยายามทำตัวดีกับคนอื่น  ฉันใส่ใจความรู้สึกของคนอื่น' },
-    { n:2,  text:'ฉันอยู่ไม่นิ่ง  ฉันนั่งนิ่งๆ ไม่ได้' },
-    { n:3,  text:'ฉันปวดศีรษะ  ปวดท้อง  หรือไม่สบายบ่อยๆ' },
-    { n:4,  text:'ฉันเต็มใจแบ่งปันสิ่งของให้เพื่อน (ขนม, ของเล่น, ดินสอ เป็นต้น)' },
-    { n:5,  text:'ฉันโกรธแรง และมักอารมณ์เสีย' },
-    { n:6,  text:'ฉันชอบอยู่กับตัวเอง ฉันชอบเล่นคนเดียวหรืออยู่ตามลำพัง' },
-    { n:7,  text:'ฉันมักทำตามที่คนอื่นบอก' },
-    { n:8,  text:'ฉันขี้กังวล' },
-    { n:9,  text:'ใครๆ ก็พึ่งฉันได้  ถ้าเขาเสียใจ อารมณ์ไม่ดี หรือไม่สบายใจ' },
-    { n:10, text:'ฉันอยู่ไม่สุข  วุ่นวาย' },
-    { n:11, text:'ฉันมีเพื่อนสนิท' },
-    { n:12, text:'ฉันมีเรื่องทะเลาะวิวาทบ่อย ฉันทำให้คนอื่นทำอย่างที่ฉันต้องการได้' },
-    { n:13, text:'ฉันไม่มีความสุข  ท้อแท้  ร้องไห้บ่อยๆ' },
-    { n:14, text:'เพื่อนๆ ส่วนมากชอบฉัน' },
-    { n:15, text:'ฉันวอกแวกง่าย  ฉันรู้สึกว่าไม่มีสมาธิ' },
-    { n:16, text:'ฉันกังวลเวลาอยู่ในสถานการณ์ที่ไม่คุ้น และเสียความมั่นใจในตนเองง่าย' },
-    { n:17, text:'ฉันใจดีกับเด็กที่เล็กกว่า' },
-    { n:18, text:'มีคนว่าฉันโกหก  หรือขี้โกงบ่อยๆ' },
-    { n:19, text:'เด็กๆ คนอื่นล้อเลียน  หรือรังแกฉัน' },
-    { n:20, text:'ฉันมักจะอาสาช่วยเหลือผู้อื่น (พ่อแม่, ครู, เพื่อน, เด็กคนอื่นๆ เป็นต้น)' },
-    { n:21, text:'ฉันคิดก่อนทำ' },
-    { n:22, text:'ฉันเอาของคนอื่นในบ้าน  ที่โรงเรียนหรือที่อื่น' },
-    { n:23, text:'ฉันเข้ากับผู้ใหญ่ได้ดีกว่ากับเด็กในวัยเดียวกัน' },
-    { n:24, text:'ฉันขี้กลัว  รู้สึกหวาดกลัวได้ง่าย' },
-    { n:25, text:'ฉันทำงานได้จนเสร็จ ความตั้งใจในการทำงานของฉันดี' },
-  ]
-};
-QUESTIONS.parent = QUESTIONS.teacher;
-
-const TYPE_LABELS = { teacher: 'ครูประเมิน', parent: 'ผู้ปกครองประเมิน', student: 'นักเรียนประเมินตนเอง' };
-const TYPE_ICONS = { teacher: '👩‍🏫', parent: '👨‍👩‍👧', student: '🎒' };
-
-// ============================================================
-//  SCORING
-// ============================================================
-function getItemScore(val, itemNo, reverse) {
-  const raw = parseInt(val);
-  if (isNaN(raw)) return null;
-  if (reverse.includes(itemNo)) return 2 - raw;
-  return raw;
-}
-
-function scoreDimension(answers, dim) {
-  let total = 0;
-  for (const n of dim.items) {
-    const raw = answers[n];
-    if (raw === undefined || raw === null) return null;
-    const s = getItemScore(raw, n, dim.reverse);
-    if (s === null) return null;
-    total += s;
-  }
-  return total;
-}
-
-function interpretDim(score, dimId, raterType) {
-  if (dimId === 5) {
-    if (score >= 4) return { label: 'มีจุดแข็ง', cls: 'normal' };
-    return { label: 'ไม่มีจุดแข็ง', cls: 'risk' };
-  }
-  const thresh = THRESHOLDS[raterType][dimId];
-  if (!thresh) return null;
-  const [normalMax, riskVal] = thresh;
-  if (score <= normalMax) return { label: 'ปกติ', cls: 'normal' };
-  if (score === riskVal) return { label: 'เสี่ยง', cls: 'risk' };
-  return { label: 'มีปัญหา', cls: 'problem' };
-}
-
-function interpretTotal(score, raterType) {
-  const [normalMax, riskVal] = THRESHOLDS[raterType].total;
-  if (score <= normalMax) return { label: 'ปกติ', cls: 'normal' };
-  if (score === riskVal) return { label: 'เสี่ยง', cls: 'risk' };
-  return { label: 'มีปัญหา', cls: 'problem' };
-}
-
-function interpretImpact(score) {
-  if (score === 0) return { label: 'ปกติ', cls: 'normal' };
-  if (score <= 2) return { label: 'เสี่ยง', cls: 'risk' };
-  return { label: 'มีปัญหา', cls: 'problem' };
-}
-
-function calcScores(answers, raterType) {
-  const dims = {};
-  let total14 = 0;
-  let allFilled = true;
-  for (const dim of DIMENSIONS) {
-    const s = scoreDimension(answers, dim);
-    if (s === null) { allFilled = false; dims[dim.id] = null; }
-    else {
-      dims[dim.id] = s;
-      if (dim.id <= 4) total14 += s;
-    }
-  }
-  return { dims, total: allFilled ? total14 : null, allFilled };
-}
-
-// ============================================================
-//  VIEW ROUTER
-// ============================================================
-async function switchView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.topbar-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  const btns = document.querySelectorAll('.topbar-btn');
-  const labels = ['home','assess','results','class-summary','manage'];
-  btns.forEach((b,i) => { if (labels[i] === name) b.classList.add('active'); });
-  // Re-fetch from Sheets whenever switching to a data view
-  if (['home','results','class-summary','manage'].includes(name)) {
-    await fetchAll();
-  }
-  if (name === 'results') renderResults();
-  if (name === 'class-summary') renderClassSummary();
-  if (name === 'manage') renderStudentList();
-  if (name === 'home') renderHome();
-}
-
-// ============================================================
-//  HOME
-// ============================================================
-function renderHome() {
-  const data = loadData();
-  const total = data.assessments.length;
-  let n=0,r=0,p=0;
-  data.assessments.forEach(a => {
-    const s = calcScores(a.answers, a.type);
-    if (s.allFilled) {
-      const interp = interpretTotal(s.total, a.type);
-      if (interp.cls === 'normal') n++;
-      else if (interp.cls === 'risk') r++;
-      else p++;
-    }
-  });
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-normal').textContent = n;
-  document.getElementById('stat-risk').textContent = r;
-  document.getElementById('stat-problem').textContent = p;
-
-  const recent = data.assessments.slice(-5).reverse();
-  const el = document.getElementById('home-recent');
-  if (!recent.length) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">📝</div><p>ยังไม่มีการประเมิน — เริ่มประเมินด้านบนได้เลย</p></div>`;
-    return;
-  }
-  let html = `<div class="section-title">การประเมินล่าสุด</div><table class="data-table"><thead><tr>
-    <th>ชื่อ</th><th>ชั้น</th><th>ผู้ประเมิน</th><th>คะแนนรวม</th><th>ผล</th><th>วันที่</th>
-  </tr></thead><tbody>`;
-  recent.forEach(a => {
-    const s = calcScores(a.answers, a.type);
-    const interp = s.allFilled ? interpretTotal(s.total, a.type) : { label:'ไม่สมบูรณ์', cls:'normal' };
-    const d = new Date(a.date);
-    html += `<tr>
-      <td><strong>${a.studentName || '—'}</strong></td>
-      <td>${a.class || '—'}</td>
-      <td>${TYPE_ICONS[a.type]} ${TYPE_LABELS[a.type]}</td>
-      <td style="text-align:center;font-weight:700">${s.allFilled ? s.total : '—'}</td>
-      <td><span class="badge badge-${interp.cls}">${interp.label}</span></td>
-      <td style="color:var(--text-light);font-size:13px">${d.toLocaleDateString('th-TH')}</td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  el.innerHTML = html;
-}
-
-// ============================================================
-//  ASSESSMENT FORM
-// ============================================================
-let currentType = 'teacher';
-
-function startAssessment(type) {
-  currentType = type;
-  switchView('assess');
-  const data = loadData();
-  const qs = QUESTIONS[type];
-  const studentOptions = data.students.map(s =>
-    `<option value="${s.id}">${s.name} (${s.class} เลขที่ ${s.num})</option>`
-  ).join('');
-
-  const dimSections = DIMENSIONS.map(dim => {
-    const rows = dim.items.map(n => {
-      const q = qs.find(x => x.n === n);
-      const isReverse = dim.reverse.includes(n);
-      const opts = isReverse
-        ? [{v:0,l:'จริง'},{v:1,l:'ค่อนข้าง'},{v:2,l:'ไม่จริง'}]
-        : [{v:0,l:'ไม่จริง'},{v:1,l:'ค่อนข้าง'},{v:2,l:'จริง'}];
-      return `<tr>
-        <td><span class="q-num">${n}.</span>${q.text}${isReverse?'<span class="q-reverse">↺</span>':''}</td>
-        ${opts.map((o,i) => `<td>
-          <div class="radio-group">
-            <div class="radio-option">
-              <input type="radio" name="q${n}" id="q${n}_${i}" value="${i}">
-              <label class="radio-label" for="q${n}_${i}">${o.l}</label>
+        <div id="extendedQuestions" style="display: none;" class="p-3 p-md-4 border rounded bg-white mb-4 shadow-sm">
+          <div class="mb-4"><label class="fw-bold fs-5">2. ปัญหานี้เกิดขึ้นมานานเท่าไหร่แล้ว ?</label>
+            <select class="form-select form-select-lg mt-2 fs-5" name="b2" id="b2" style="padding: 12px;"><option value="">-- แตะเพื่อเลือก --</option><option value="น้อยกว่า 1 เดือน">น้อยกว่า 1 เดือน</option><option value="1 - 5 เดือน">1 - 5 เดือน</option><option value="6 - 12 เดือน">6 - 12 เดือน</option><option value="มากกว่า 1 ปี">มากกว่า 1 ปี</option></select>
+          </div>
+          <div class="mb-4"><label class="fw-bold fs-5">3. ปัญหานี้ทำให้เด็กรู้สึกไม่สบายใจหรือไม่ ?</label>
+            <select class="form-select form-select-lg mt-2 fs-5" name="b3" id="b3" style="padding: 12px;"><option value="">-- แตะเพื่อเลือก --</option><option value="ไม่เลย">ไม่เลย</option><option value="เล็กน้อย">เล็กน้อย</option><option value="ค่อนข้างมาก">ค่อนข้างมาก</option><option value="มาก">มาก</option></select>
+          </div>
+          <div class="mb-4"><label class="fw-bold fs-5">4. ปัญหานี้รบกวนชีวิตประจำวันของเด็ก ในด้านต่างๆ ต่อไปนี้หรือไม่ ?</label>
+            <div class="ms-2 ms-md-4 mt-3">
+              <p class="mb-2 text-primary fw-bold fs-5">- ด้านการคบเพื่อน</p>
+              <select class="form-select form-select-lg mb-4 fs-5" name="b4_1" id="b4_1" style="padding: 12px;"><option value="">-- แตะเพื่อเลือก --</option><option value="ไม่เลย">ไม่เลย</option><option value="เล็กน้อย">เล็กน้อย</option><option value="ค่อนข้างมาก">ค่อนข้างมาก</option><option value="มาก">มาก</option></select>
+              <p class="mb-2 text-primary fw-bold fs-5">- ด้านการเรียนในห้องเรียน</p>
+              <select class="form-select form-select-lg fs-5" name="b4_2" id="b4_2" style="padding: 12px;"><option value="">-- แตะเพื่อเลือก --</option><option value="ไม่เลย">ไม่เลย</option><option value="เล็กน้อย">เล็กน้อย</option><option value="ค่อนข้างมาก">ค่อนข้างมาก</option><option value="มาก">มาก</option></select>
             </div>
           </div>
-        </td>`).join('')}
-      </tr>`;
-    }).join('');
-    return `<div class="q-section">
-      <div class="q-section-header">
-        <div class="q-section-num">${dim.id}</div>
-        ${dim.name}
-      </div>
-      <table class="q-table">
-        <thead><tr>
-          <th style="width:55%">พฤติกรรม</th>
-          <th>ไม่จริง (0)</th><th>ค่อนข้างจริง (1)</th><th>จริง (2)</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-  }).join('');
-
-  // Impact section
-  let impactSection = `<div class="impact-section">
-    <div class="impact-title">📋 ส่วนประเมินเพิ่มเติม (ด้านหลัง)</div>
-    <div class="impact-q">
-      <label>1. โดยรวม เด็กมีปัญหาด้านอารมณ์ สมาธิ พฤติกรรม หรือการเข้ากับผู้อื่นหรือไม่?</label>
-      <div class="impact-opts">
-        <label class="impact-opt"><input type="radio" name="imp_q1" value="no"> ไม่</label>
-        <label class="impact-opt"><input type="radio" name="imp_q1" value="minor"> ใช่ มีปัญหาเล็กน้อย</label>
-        <label class="impact-opt"><input type="radio" name="imp_q1" value="clear"> ใช่ มีปัญหาชัดเจน</label>
-        <label class="impact-opt"><input type="radio" name="imp_q1" value="severe"> ใช่ มีปัญหาอย่างมาก</label>
-      </div>
-    </div>
-    <div id="impact-followup" style="display:none">
-      <div class="impact-q">
-        <label>ปัญหานี้เกิดขึ้นมานานเท่าไหร่แล้ว?</label>
-        <div class="impact-opts">
-          <label class="impact-opt"><input type="radio" name="imp_dur" value="lt1m"> น้อยกว่า 1 เดือน</label>
-          <label class="impact-opt"><input type="radio" name="imp_dur" value="1-5m"> 1-5 เดือน</label>
-          <label class="impact-opt"><input type="radio" name="imp_dur" value="6-12m"> 6-12 เดือน</label>
-          <label class="impact-opt"><input type="radio" name="imp_dur" value="gt1y"> มากกว่า 1 ปี</label>
-        </div>
-      </div>
-      <div class="impact-q">
-        <label>ปัญหานี้ทำให้รู้สึกไม่สบายใจหรือไม่?</label>
-        <div class="impact-rate-row">
-          <span style="font-size:14px">ความไม่สบายใจ</span>
-          <div class="impact-rate-opts">
-            <button type="button" class="rate-btn" onclick="selectRate(this,'imp_distress','0')">ไม่เลย (0)</button>
-            <button type="button" class="rate-btn" onclick="selectRate(this,'imp_distress','0')">เล็กน้อย (0)</button>
-            <button type="button" class="rate-btn" onclick="selectRate(this,'imp_distress','1')">ค่อนข้างมาก (1)</button>
-            <button type="button" class="rate-btn" onclick="selectRate(this,'imp_distress','2')">มาก (2)</button>
+          <div class="mb-2"><label class="fw-bold fs-5">5. ปัญหาของเด็กทำให้คุณ หรือชั้นเรียนเกิดความยุ่งยากหรือไม่ ?</label>
+            <select class="form-select form-select-lg mt-2 fs-5" name="b5" id="b5" style="padding: 12px;"><option value="">-- แตะเพื่อเลือก --</option><option value="ไม่เลย">ไม่เลย</option><option value="เล็กน้อย">เล็กน้อย</option><option value="ค่อนข้างมาก">ค่อนข้างมาก</option><option value="มาก">มาก</option></select>
           </div>
         </div>
+
+        <button type="submit" class="btn btn-success w-100 py-3 mt-3 fw-bold shadow-lg text-white" style="font-size: 1.6rem; border-radius: 14px;" id="submitBtn">
+          💾 บันทึกแบบประเมินเรียบร้อย
+        </button>
       </div>
-      <div class="impact-q">
-        <label>ปัญหานี้รบกวนชีวิตประจำวันในด้านต่างๆ หรือไม่?</label>`;
+    </form>
+  </div>
 
-  const impactAreas = type === 'teacher'
-    ? ['การคบเพื่อน','การเรียนในห้องเรียน']
-    : ['ความเป็นอยู่ที่บ้าน','การคบเพื่อน','การเรียนในห้องเรียน','กิจกรรมยามว่าง'];
+  <script>
+    // 🔗 แก้ไขจุดนี้: วางลิงก์ Web App ของคุณที่ได้มาจากการ Deploy ใน Google Apps Script
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwuLn76nG2a68APykzWPgMN76il15JmIJU_AxVaF45rlujTDF1S-IDhwuFexT-SROmw/exec";
 
-  impactAreas.forEach((area, i) => {
-    const key = `imp_area${i}`;
-    impactSection += `<div class="impact-rate-row">
-      <span style="font-size:14px">${area}</span>
-      <div class="impact-rate-opts">
-        <button type="button" class="rate-btn" onclick="selectRate(this,'${key}','0')">ไม่เลย (0)</button>
-        <button type="button" class="rate-btn" onclick="selectRate(this,'${key}','0')">เล็กน้อย (0)</button>
-        <button type="button" class="rate-btn" onclick="selectRate(this,'${key}','1')">ค่อนข้างมาก (1)</button>
-        <button type="button" class="rate-btn" onclick="selectRate(this,'${key}','2')">มาก (2)</button>
-      </div>
-    </div>`;
-  });
+    const questionsList = [
+      "ห่วงใยความรู้สึกคนอื่น", "อยู่ไม่นิ่ง นั่งนิ่ง ๆ ไม่ได้", "มักจะบ่นว่าปวดศีรษะ ปวดท้อง",
+      "เต็มใจแบ่งปันสิ่งของให้เพื่อน", "มักจะอาละวาด หรือโมโหร้าย",
+      "ค่อนข้างแยกตัว ชอบเล่นคนเดียว", "เชื่อฟัง มักจะทำตามที่ผู้ใหญ่ต้องการ", "กังวลใจหลายเรื่อง ดูกังวลเสมอ",
+      "เป็นที่พึ่งได้เวลาที่คนอื่นเสียใจ อารมณ์ไม่ดี หรือไม่สบายใจ", "อยู่ไม่สุข วุ่นวายอย่างมาก",
+      "มีเพื่อนสนิท", "มักจะมีเรื่องทะเลาะวิวาทกับเด็กอื่น หรือรังแกเด็กอื่น", "ดูไม่มีความสุข ท้อแท้",
+      "เป็นที่ชื่นชอบของเพื่อน", "วอกแวกง่าย สมาธิสั้น", "เครียดไม่ยอมห่างเวลาอยู่ในสถานการณ์ที่ไม่คุ้น",
+      "ใจดีกับเด็กที่เล็กกว่า", "ชอบโกหก หรือขี้โกง", "ถูกเด็กคนอื่นล้อเลียนหรือรังแก",
+      "ชอบอาสาช่วยเหลือผู้อื่น", "คิดก่อนทำ", "ขโมยของที่บ้าน ที่โรงเรียนหรือที่อื่น",
+      "เข้ากับผู้ใหญ่ได้ดีกว่าเด็กวัยเดียวกัน", "ขี้กลัว รู้สึกหวาดกลัวได้ง่าย", "ทำงานได้จนเสร็จ มีความตั้งใจ"
+    ];
 
-  impactSection += `</div></div></div></div>`;
+    let globalStudentData = []; 
+    let globalStats = null; 
+    let teacherDropdownOptions = {}; 
 
-  document.getElementById('assess-content').innerHTML = `
-    <div class="hero" style="padding:24px 28px;margin-bottom:20px">
-      <h1 style="font-size:20px">${TYPE_ICONS[type]} แบบประเมิน SDQ — ${TYPE_LABELS[type]}</h1>
-      <p style="margin-top:4px">กรุณาตอบให้ตรงกับลักษณะของเด็กในช่วง 6 เดือนที่ผ่านมา ครบทุกข้อ</p>
-    </div>
-    <div class="form-card">
-      <div class="form-row">
-        <div class="form-group">
-          <label>นักเรียน</label>
-          ${data.students.length
-            ? `<select id="assess-student"><option value="">— เลือกนักเรียน —</option>${studentOptions}</select>`
-            : `<input type="text" id="assess-name-input" placeholder="ชื่อ-สกุล นักเรียน">`
-          }
-        </div>
-        <div class="form-group">
-          <label>ชั้น</label>
-          <input type="text" id="assess-class" placeholder="เช่น ป.3/1">
-        </div>
-        <div class="form-group">
-          <label>ผู้ประเมิน (ชื่อ)</label>
-          <input type="text" id="assess-rater" placeholder="ชื่อผู้ประเมิน">
-        </div>
-      </div>
-    </div>
-    ${dimSections}
-    ${impactSection}
-    <div class="actions-bar">
-      <button class="btn btn-secondary" onclick="switchView('home')">ยกเลิก</button>
-      <button class="btn btn-teal" onclick="validateAndScore()">คำนวณคะแนน 🔍</button>
-      <button class="btn btn-primary" onclick="submitAssessment()">บันทึกผล 💾</button>
-    </div>
-  `;
+    window.onload = function() {
+      // สร้าง UI กล่องคำถาม
+      let html = "";
+      questionsList.forEach((q, index) => {
+        let qNum = index + 1;
+        html += `
+          <div class="question-card">
+            <div class="fw-bold text-dark mb-3 fs-4" style="line-height: 1.4;">ข้อ ${qNum}. ${q}</div>
+            <div class="row g-2">
+              <div class="col-12 col-md-4">
+                <label class="radio-label">
+                  <input type="radio" name="q${qNum}" value="0" required> 
+                  <span class="radio-text">❌ ไม่จริง</span>
+                </label>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="radio-label">
+                  <input type="radio" name="q${qNum}" value="1"> 
+                  <span class="radio-text">🔶 ค่อนข้างจริง</span>
+                </label>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="radio-label">
+                  <input type="radio" name="q${qNum}" value="2"> 
+                  <span class="radio-text">✔️ จริง</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById("questionsContainer").innerHTML = html;
 
-  // Show followup when "yes" selected
-  document.querySelectorAll('[name="imp_q1"]').forEach(r => {
-    r.addEventListener('change', () => {
-      document.getElementById('impact-followup').style.display =
-        r.value === 'no' ? 'none' : 'block';
-    });
-  });
+      // ดึงรายชื่อนักเรียนผ่าน API (ย้ายไปดึงจาก GAS หลังบ้าน)
+      fetch(`${WEB_APP_URL}?action=getStudentList`)
+        .then(res => res.json())
+        .then(students => {
+          globalStudentData = students;
+          loadStats();
+        })
+        .catch(err => {
+          console.error("Error loading students:", err);
+          Swal.fire('เชื่อมต่อล้มเหลว', 'ไม่สามารถโหลดรายชื่อนักเรียนจากเซิร์ฟเวอร์ได้', 'error');
+        });
+    };
 
-  // Auto fill class from student select
-  const sel = document.getElementById('assess-student');
-  if (sel) {
-    sel.addEventListener('change', () => {
-      const student = data.students.find(s => s.id === sel.value);
-      if (student) document.getElementById('assess-class').value = student.class;
-    });
-  }
-}
-
-function selectRate(btn, key, val) {
-  const parent = btn.closest('.impact-rate-opts');
-  parent.querySelectorAll('.rate-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  btn.dataset.key = key;
-  btn.dataset.val = val;
-  parent.dataset.key = key;
-  parent.dataset.val = val;
-}
-
-function collectAnswers() {
-  const answers = {};
-  for (let n = 1; n <= 25; n++) {
-    const sel = document.querySelector(`input[name="q${n}"]:checked`);
-    if (sel) answers[n] = parseInt(sel.value);
-  }
-  return answers;
-}
-
-function getImpactAnswers() {
-  const q1 = document.querySelector('[name="imp_q1"]:checked')?.value;
-  const dur = document.querySelector('[name="imp_dur"]:checked')?.value;
-  const distressEl = document.querySelector('.impact-rate-opts[data-key="imp_distress"]');
-  const distress = distressEl ? parseInt(distressEl.dataset.val || '0') : 0;
-  let areaTotal = 0;
-  document.querySelectorAll('.impact-rate-opts').forEach(el => {
-    if (el.dataset.key && el.dataset.key.startsWith('imp_area')) {
-      areaTotal += parseInt(el.dataset.val || '0');
+    function loadStats() {
+      fetch(`${WEB_APP_URL}?action=getEvaluationStats`)
+        .then(res => res.json())
+        .then(stats => {
+          globalStats = stats; 
+          
+          document.getElementById("stat-ครู").innerHTML = `<span class="text-success fw-bold">ทำแล้ว: ${stats.teacher.done}</span> | <span class="text-danger">เหลือ: ${stats.teacher.left}</span>`;
+          document.getElementById("stat-ผู้ปกครอง").innerHTML = `<span class="text-success fw-bold">ทำแล้ว: ${stats.parent.done}</span> | <span class="text-danger">เหลือ: ${stats.parent.left}</span>`;
+          document.getElementById("stat-นักเรียน").innerHTML = `<span class="text-success fw-bold">ทำแล้ว: ${stats.student.done}</span> | <span class="text-danger">เหลือ: ${stats.student.left}</span>`;
+          
+          teacherDropdownOptions = {};
+          let teacherEvaluated = globalStats.teacher.evaluatedNames;
+          globalStudentData.forEach((s, index) => {
+            if (!teacherEvaluated.includes(s.fullName)) {
+              teacherDropdownOptions[index] = `เลขที่ ${s.studentNo || '-'} : ${s.fullName} (${s.className || '-'})`;
+            }
+          });
+        })
+        .catch(err => console.error("Error loading stats:", err));
     }
-  });
-  const total = distress + areaTotal;
-  return { q1, dur, distress, areaTotal, total };
-}
 
-function validateAndScore() {
-  const answers = collectAnswers();
-  const filled = Object.keys(answers).length;
-  if (filled < 25) {
-    alert(`กรุณาตอบให้ครบทุกข้อ (ตอบแล้ว ${filled}/25 ข้อ)`);
-    return null;
-  }
-  const scores = calcScores(answers, currentType);
-  showResultModal(scores, answers, currentType, null);
-  return scores;
-}
-
-function showResultModal(scores, answers, type, savedId) {
-  const { dims, total } = scores;
-  const totalInterp = interpretTotal(total, type);
-
-  let html = `
-    <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px">
-      <div class="result-overall ${totalInterp.cls === 'normal' ? 'status-normal' : totalInterp.cls === 'risk' ? 'status-risk' : 'status-problem'}" style="flex:1;min-width:160px">
-        <div class="label">คะแนนรวมพฤติกรรม 4 ด้าน</div>
-        <div class="value">${total}</div>
-        <div class="status">${totalInterp.label}</div>
-      </div>
-    </div>
-    <div class="dimensions-grid">`;
-
-  DIMENSIONS.forEach(dim => {
-    const s = dims[dim.id];
-    const interp = dim.id === 5
-      ? (s >= 4 ? { label:'มีจุดแข็ง', cls:'normal' } : { label:'ไม่มีจุดแข็ง', cls:'risk' })
-      : interpretDim(s, dim.id, type);
-    html += `<div class="dim-card ${interp.cls}">
-      <div class="dim-label">ด้านที่ ${dim.id}: ${dim.name}</div>
-      <div class="dim-score">${s}</div>
-      <div class="dim-status">${interp.label}</div>
-    </div>`;
-  });
-
-  html += `</div>`;
-
-  // Impact
-  const impact = getImpactAnswers();
-  if (impact.q1 && impact.q1 !== 'no') {
-    const impInterp = interpretImpact(impact.total);
-    html += `<div style="background:#f8f9fb;border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-top:4px">
-      <div style="font-weight:700;margin-bottom:8px;color:var(--navy)">ผลประเมินด้านหลัง (Impact)</div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <span style="font-size:14px">คะแนนรวม: <strong>${impact.total}</strong></span>
-        <span class="badge badge-${impInterp.cls}">${impInterp.label}</span>
-      </div>
-    </div>`;
-  }
-
-  document.getElementById('modal-result-body').innerHTML = html;
-  document.getElementById('result-modal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('result-modal').classList.remove('open');
-}
-
-function submitAssessment() {
-  const answers = collectAnswers();
-  if (Object.keys(answers).length < 25) {
-    alert('กรุณาตอบให้ครบทุกข้อ');
-    return;
-  }
-
-  let studentName = '', studentClass = '', studentId = null;
-  const sel = document.getElementById('assess-student');
-  const nameInput = document.getElementById('assess-name-input');
-  if (sel) {
-    const data0 = loadData();
-    const st = data0.students.find(s => s.id === sel.value);
-    if (st) { studentName = st.name; studentClass = st.class; studentId = st.id; }
-    else studentName = sel.options[sel.selectedIndex]?.text || '';
-  } else if (nameInput) {
-    studentName = nameInput.value.trim();
-  }
-  studentClass = document.getElementById('assess-class')?.value || studentClass;
-  const rater = document.getElementById('assess-rater')?.value || '';
-  const impact = getImpactAnswers();
-
-  const record = {
-    id: Date.now().toString(),
-    type: currentType,
-    studentId, studentName, class: studentClass,
-    rater, answers, impact,
-    date: new Date().toISOString()
-  };
-
-  // Show result immediately, save to Sheets in background
-  const scores = calcScores(answers, currentType);
-  showResultModal(scores, answers, currentType, record.id);
-
-  const body = document.getElementById('modal-result-body');
-  const saveMsg = document.createElement('div');
-  saveMsg.style.cssText = 'text-align:center;padding:10px;color:var(--text-mid);font-size:13px;margin-top:8px';
-  saveMsg.textContent = '⏳ กำลังบันทึกลง Google Sheets...';
-  body.appendChild(saveMsg);
-
-  saveAssessmentToSheet(record).then(() => {
-    saveMsg.innerHTML = '✅ บันทึกลง Google Sheets เรียบร้อย';
-    saveMsg.style.color = 'var(--green)';
-    body.insertAdjacentHTML('beforeend', `
-      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-        <button class="btn btn-primary" onclick="closeModal();switchView('results')">ดูผลทั้งหมด</button>
-        <button class="btn btn-secondary" onclick="closeModal();startAssessment('${currentType}')">ประเมินอีกครั้ง</button>
-      </div>
-    `);
-  }).catch(err => {
-    saveMsg.innerHTML = '❌ บันทึกไม่สำเร็จ — กรุณาลองใหม่';
-    saveMsg.style.color = 'var(--red)';
-    console.error(err);
-  });
-}
-
-// ============================================================
-//  RESULTS LIST
-// ============================================================
-function renderResults() {
-  const data = loadData();
-  const cl = document.getElementById('filter-class')?.value || '';
-  const tp = document.getElementById('filter-type')?.value || '';
-  const st = document.getElementById('filter-status')?.value || '';
-
-  // Populate class filter
-  const classes = [...new Set(data.assessments.map(a => a.class).filter(Boolean))].sort();
-  const fcl = document.getElementById('filter-class');
-  if (fcl) {
-    const cur = fcl.value;
-    fcl.innerHTML = '<option value="">ทุกชั้น</option>' + classes.map(c => `<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
-  }
-
-  let list = data.assessments.filter(a => {
-    if (cl && a.class !== cl) return false;
-    if (tp && a.type !== tp) return false;
-    return true;
-  });
-
-  list = list.filter(a => {
-    if (!st) return true;
-    const s = calcScores(a.answers, a.type);
-    if (!s.allFilled) return false;
-    const interp = interpretTotal(s.total, a.type);
-    return interp.label === st;
-  });
-
-  if (!list.length) {
-    document.getElementById('results-content').innerHTML =
-      `<div class="empty-state"><div class="icon">📊</div><p>ไม่พบข้อมูลการประเมิน</p></div>`;
-    return;
-  }
-
-  let html = `<table class="data-table"><thead><tr>
-    <th>#</th><th>ชื่อ</th><th>ชั้น</th><th>ผู้ประเมิน</th>
-    <th>ด้าน1</th><th>ด้าน2</th><th>ด้าน3</th><th>ด้าน4</th><th>ด้าน5</th>
-    <th>รวม</th><th>สถานะ</th><th>วันที่</th><th></th>
-  </tr></thead><tbody>`;
-
-  list.slice().reverse().forEach((a, i) => {
-    const s = calcScores(a.answers, a.type);
-    const interp = s.allFilled ? interpretTotal(s.total, a.type) : { label:'—', cls:'normal' };
-    const d5interp = s.dims[5] >= 4 ? { label:'มีจุดแข็ง', cls:'strength' } : { label:'ไม่มีจุดแข็ง', cls:'no-strength' };
-    const d = new Date(a.date);
-
-    const dimCells = [1,2,3,4].map(id => {
-      const sc = s.dims[id];
-      const dInterp = sc !== null ? interpretDim(sc, id, a.type) : { label:'—', cls:'normal' };
-      return `<td style="text-align:center">
-        <span class="badge badge-${dInterp.cls}" style="font-size:11px">${sc ?? '—'}<br>${dInterp.label}</span>
-      </td>`;
-    }).join('');
-
-    html += `<tr>
-      <td style="color:var(--text-light);font-size:12px">${list.length - i}</td>
-      <td><strong>${a.studentName||'—'}</strong></td>
-      <td>${a.class||'—'}</td>
-      <td style="font-size:13px">${TYPE_ICONS[a.type]} ${TYPE_LABELS[a.type]}</td>
-      ${dimCells}
-      <td style="text-align:center">
-        <span class="badge badge-${d5interp.cls}" style="font-size:11px">${s.dims[5]??'—'}<br>${d5interp.label}</span>
-      </td>
-      <td style="text-align:center;font-weight:700;font-size:16px">${s.allFilled ? s.total : '—'}</td>
-      <td><span class="badge badge-${interp.cls}">${interp.label}</span></td>
-      <td style="color:var(--text-light);font-size:12px">${d.toLocaleDateString('th-TH')}</td>
-      <td><button class="btn btn-secondary btn-sm" onclick="deleteAssessment('${a.id}')">🗑️</button></td>
-    </tr>`;
-  });
-
-  html += '</tbody></table>';
-  document.getElementById('results-content').innerHTML = html;
-}
-
-async function deleteAssessment(id) {
-  if (!confirm('ลบการประเมินนี้?')) return;
-  showSpinner(true);
-  try {
-    await deleteAssessmentFromSheet(id);
-    showToast('ลบเรียบร้อย');
-    renderResults();
-    renderHome();
-  } catch(e) {
-    showToast('❌ ลบไม่สำเร็จ', 'err');
-  } finally {
-    showSpinner(false);
-  }
-}
-
-// ============================================================
-//  CLASS SUMMARY
-// ============================================================
-function renderClassSummary() {
-  const data = loadData();
-  const selCl = document.getElementById('class-filter')?.value || '';
-  const selType = document.getElementById('class-type-filter')?.value || '';
-
-  const classes = [...new Set(data.assessments.map(a => a.class).filter(Boolean))].sort();
-  const fcl = document.getElementById('class-filter');
-  if (fcl) {
-    const cur = fcl.value;
-    fcl.innerHTML = '<option value="">ทุกชั้น</option>' + classes.map(c => `<option value="${c}"${c===cur?' selected':''}>${c}</option>`).join('');
-  }
-
-  let filtered = data.assessments.filter(a => {
-    if (selCl && a.class !== selCl) return false;
-    if (selType && a.type !== selType) return false;
-    return a.class;
-  });
-
-  if (!filtered.length) {
-    document.getElementById('class-summary-content').innerHTML =
-      `<div class="empty-state"><div class="icon">🏫</div><p>ไม่พบข้อมูลรายชั้น</p></div>`;
-    return;
-  }
-
-  // Group by class
-  const byClass = {};
-  filtered.forEach(a => {
-    if (!byClass[a.class]) byClass[a.class] = [];
-    byClass[a.class].push(a);
-  });
-
-  let html = '';
-  Object.entries(byClass).sort().forEach(([cls, assessments]) => {
-    const scored = assessments.map(a => {
-      const s = calcScores(a.answers, a.type);
-      return { ...a, scores: s };
-    }).filter(a => a.scores.allFilled);
-
-    const n = scored.filter(a => interpretTotal(a.scores.total, a.type).cls === 'normal').length;
-    const r = scored.filter(a => interpretTotal(a.scores.total, a.type).cls === 'risk').length;
-    const p = scored.filter(a => interpretTotal(a.scores.total, a.type).cls === 'problem').length;
-    const total = scored.length;
-
-    // Dimension averages
-    const dimAvgs = DIMENSIONS.map(dim => {
-      const vals = scored.map(a => a.scores.dims[dim.id]).filter(v => v !== null);
-      const avg = vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1) : '—';
-      return { dim, avg };
-    });
-
-    const pct = total ? Math.round(p/total*100) : 0;
-    const riskPct = total ? Math.round(r/total*100) : 0;
-
-    html += `<div class="card" style="margin-bottom:20px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-        <div>
-          <div style="font-size:20px;font-weight:800;color:var(--navy)">ชั้น ${cls}</div>
-          <div style="font-size:13px;color:var(--text-mid)">${total} การประเมิน (${selType ? TYPE_LABELS[selType] : 'ทุกผู้ประเมิน'})</div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div style="text-align:center;background:var(--green-light);color:var(--green);padding:8px 16px;border-radius:8px">
-            <div style="font-size:22px;font-weight:800">${n}</div><div style="font-size:12px;font-weight:600">ปกติ</div>
-          </div>
-          <div style="text-align:center;background:var(--gold-light);color:#9a6600;padding:8px 16px;border-radius:8px">
-            <div style="font-size:22px;font-weight:800">${r}</div><div style="font-size:12px;font-weight:600">เสี่ยง</div>
-          </div>
-          <div style="text-align:center;background:var(--red-light);color:var(--red);padding:8px 16px;border-radius:8px">
-            <div style="font-size:22px;font-weight:800">${p}</div><div style="font-size:12px;font-weight:600">มีปัญหา</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:6px">สัดส่วนสถานะ</div>
-        <div style="display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px">
-          ${n ? `<div style="flex:${n};background:var(--green);border-radius:4px"></div>` : ''}
-          ${r ? `<div style="flex:${r};background:var(--gold);border-radius:4px"></div>` : ''}
-          ${p ? `<div style="flex:${p};background:var(--red);border-radius:4px"></div>` : ''}
-        </div>
-      </div>
-
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:8px">คะแนนเฉลี่ยแต่ละด้าน</div>
-      <div class="bar-chart">`;
-
-    dimAvgs.forEach(({dim, avg}) => {
-      const maxScore = 10;
-      const pctWidth = avg !== '—' ? Math.round(parseFloat(avg)/maxScore*100) : 0;
-      const color = dim.id === 5 ? 'green' : (parseFloat(avg) > (dim.id === 3 ? 6 : dim.id === 4 ? 6 : 4) ? 'red' : 'green');
-      html += `<div class="bar-row">
-        <div class="bar-label" style="width:180px;font-size:12.5px">ด้านที่${dim.id}: ${dim.name}</div>
-        <div class="bar-track">
-          <div class="bar-fill ${color}" style="width:${pctWidth}%"></div>
-        </div>
-        <div class="bar-val">${avg}</div>
-      </div>`;
-    });
-
-    html += `</div>
-
-    <div style="margin-top:14px">
-      <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:8px">นักเรียนที่ต้องดูแลเป็นพิเศษ</div>
-      ${scored.filter(a => interpretTotal(a.scores.total, a.type).cls === 'problem').length === 0
-        ? `<div class="alert alert-success">✅ ไม่มีนักเรียนในกลุ่มมีปัญหาในชั้นนี้</div>`
-        : `<table class="data-table" style="font-size:13px"><thead><tr>
-            <th>ชื่อ</th><th>ผู้ประเมิน</th><th>คะแนน</th><th>สถานะ</th>
-          </tr></thead><tbody>
-          ${scored.filter(a => interpretTotal(a.scores.total, a.type).cls !== 'normal')
-            .sort((a,b) => b.scores.total - a.scores.total)
-            .map(a => {
-              const interp = interpretTotal(a.scores.total, a.type);
-              return `<tr>
-                <td><strong>${a.studentName||'—'}</strong></td>
-                <td>${TYPE_ICONS[a.type]} ${TYPE_LABELS[a.type]}</td>
-                <td style="text-align:center;font-weight:700">${a.scores.total}</td>
-                <td><span class="badge badge-${interp.cls}">${interp.label}</span></td>
-              </tr>`;
-            }).join('')}
-          </tbody></table>`
+    async function selectRole(role) {
+      if(globalStudentData.length === 0) {
+        Swal.fire('กำลังโหลดข้อมูล', 'กรุณารอสักครู่ให้ระบบโหลดรายชื่อเสร็จสิ้น...', 'info');
+        return;
       }
-    </div>
-    </div>`;
-  });
 
-  document.getElementById('class-summary-content').innerHTML = html;
-}
+      document.getElementById("userRole").value = role;
 
-// ============================================================
-//  MANAGE
-// ============================================================
-async function addStudent() {
-  const name = document.getElementById('mg-name').value.trim();
-  const nick = document.getElementById('mg-nick').value.trim();
-  const cls = document.getElementById('mg-class').value.trim();
-  const num = document.getElementById('mg-num').value.trim();
-  if (!name) { alert('กรุณาใส่ชื่อ-สกุล'); return; }
-  const student = { id: Date.now().toString(), name, nick, class: cls, num };
-  showSpinner(true);
-  try {
-    await addStudentToSheet(student);
-    showToast('✅ เพิ่มนักเรียนเรียบร้อย');
-    document.getElementById('mg-name').value = '';
-    document.getElementById('mg-nick').value = '';
-    document.getElementById('mg-class').value = '';
-    document.getElementById('mg-num').value = '';
-    renderStudentList();
-  } catch(e) {
-    showToast('❌ บันทึกไม่สำเร็จ', 'err');
-  } finally {
-    showSpinner(false);
-  }
-}
+      if(role === 'ครู') {
+        const { value: password } = await Swal.fire({
+          title: 'เข้าสู่ระบบครูประเมิน',
+          input: 'password',
+          inputLabel: 'กรุณากรอกรหัสผ่าน',
+          inputPlaceholder: 'รหัสผ่าน...',
+          showCancelButton: true,
+          confirmButtonText: 'เข้าสู่ระบบ',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#0d6efd',
+          customClass: { title: 'fs-2', htmlContainer: 'fs-4', confirmButton: 'fs-4 px-4' }
+        });
 
-function renderStudentList() {
-  const data = loadData();
-  const el = document.getElementById('student-list');
-  if (!data.students.length) {
-    el.innerHTML = `<div class="empty-state"><div class="icon">👤</div><p>ยังไม่มีรายชื่อนักเรียน</p></div>`;
-    return;
-  }
-  let html = `<div class="section-title">รายชื่อนักเรียน (${data.students.length} คน)</div>`;
-  data.students.forEach(s => {
-    html += `<div class="student-list-item">
-      <div style="font-size:20px">👤</div>
-      <div class="name">${s.name}${s.nick ? ` (${s.nick})` : ''}</div>
-      <div class="class">${s.class} เลขที่ ${s.num}</div>
-      <button class="btn btn-secondary btn-sm" onclick="deleteStudent('${s.id}')">ลบ</button>
-    </div>`;
-  });
-  el.innerHTML = html;
-}
+        if (password) {
+          if (password === '123123') {
+            if(Object.keys(teacherDropdownOptions).length === 0) {
+              Swal.fire('ยอดเยี่ยม!', 'นักเรียนทุกคนได้รับการประเมินจากครูครบเรียบร้อยแล้ว 🎉', 'success');
+              return;
+            }
 
-async function deleteStudent(id) {
-  if (!confirm('ลบนักเรียนนี้?')) return;
-  showSpinner(true);
-  try {
-    await deleteStudentFromSheet(id);
-    showToast('ลบเรียบร้อย');
-    renderStudentList();
-  } catch(e) {
-    showToast('❌ ลบไม่สำเร็จ', 'err');
-  } finally {
-    showSpinner(false);
-  }
-}
+            const { value: studentIndex } = await Swal.fire({
+              title: 'เลือกนักเรียนที่ประเมิน',
+              input: 'select',
+              inputOptions: teacherDropdownOptions,
+              inputPlaceholder: '-- ค้นหาและเลือกรายชื่อ --',
+              showCancelButton: true,
+              confirmButtonText: 'ตกลง',
+              cancelButtonText: 'ยกเลิก',
+              confirmButtonColor: '#198754',
+              customClass: { title: 'fs-3', input: 'form-select-lg fs-4', confirmButton: 'fs-4 px-4' },
+              inputValidator: (value) => {
+                return new Promise((resolve) => {
+                  if (value !== '') { resolve(); } else { resolve('กรุณาเลือกรายชื่อนักเรียนก่อนครับ'); }
+                });
+              }
+            });
 
-function clearAllData() {
-  if (!confirm('ต้องการล้างข้อมูล cache ในหน้านี้? (ข้อมูลใน Google Sheets ยังคงอยู่)')) return;
-  _cache = { students: [], assessments: [] };
-  renderStudentList();
-  renderHome();
-}
+            if (studentIndex) {
+              fillStudentFields(globalStudentData[studentIndex]);
+              showQuestionnaireUI(); 
+            }
+          } else {
+            Swal.fire({ title: 'เกิดข้อผิดพลาด!', text: 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่', icon: 'error', customClass: { title: 'fs-3', htmlContainer: 'fs-5' } });
+          }
+        }
+      } 
+      else {
+        const { value: studentId } = await Swal.fire({
+          title: `เข้าสู่ระบบ${role}`,
+          input: 'text',
+          inputLabel: 'กรุณากรอกรหัสประจำตัวนักเรียน (5 หลัก)',
+          inputPlaceholder: 'เช่น 12345',
+          showCancelButton: true,
+          confirmButtonText: 'ค้นหาข้อมูล',
+          cancelButtonText: 'ยกเลิก',
+          confirmButtonColor: '#0d6efd',
+          customClass: { title: 'fs-2', input: 'form-control-lg fs-3 text-center fw-bold', inputLabel: 'fs-4 fw-bold', confirmButton: 'fs-4 px-4', cancelButton: 'fs-4' },
+          inputValidator: (value) => {
+            if (!value) return 'กรุณากรอกรหัสประจำตัวนักเรียนครับ!';
+          }
+        });
 
-// ============================================================
-//  INIT — โหลดข้อมูลจาก Google Sheets แล้วแสดงผล
-// ============================================================
-async function init() {
-  await fetchAll();
-  renderHome();
-}
-init();
-</script>
+        if (studentId) {
+          verifyStudentIdForPopup(studentId.trim(), role);
+        }
+      }
+    }
+
+    function verifyStudentIdForPopup(inputId, role) {
+      const student = globalStudentData.find(s => s.id === inputId);
+      
+      if(!student) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่พบข้อมูล',
+          html: `ไม่พบรหัสประจำตัว <b class="fs-3 text-danger">"${inputId}"</b> ในระบบ<br>กรุณาตรวจสอบความถูกต้องอีกครั้ง`,
+          confirmButtonText: 'ลองกรอกใหม่อีกครั้ง',
+          confirmButtonColor: '#0d6efd',
+          customClass: { title: 'fs-2', htmlContainer: 'fs-4', confirmButton: 'fs-4' }
+        }).then(() => {
+          selectRole(role);
+        });
+        return;
+      }
+
+      let evaluatedNames = (role === 'ผู้ปกครอง') ? globalStats.parent.evaluatedNames : globalStats.student.evaluatedNames;
+
+      if (evaluatedNames.includes(student.fullName)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ประเมินไปแล้ว',
+          html: `นักเรียนชื่อ <b class="text-primary fs-4">${student.fullName}</b><br>ได้รับการประเมินในส่วนของ <b>"${role}"</b> เรียบร้อยแล้ว ไม่สามารถทำซ้ำได้ครับ`,
+          confirmButtonText: 'รับทราบ',
+          customClass: { title: 'fs-2', htmlContainer: 'fs-4', confirmButton: 'fs-4' }
+        });
+        return;
+      }
+
+      Swal.fire({
+        title: 'ตรวจสอบชื่อของท่าน',
+        html: `กรุณาดูชื่อด้านล่างนี้ว่าถูกต้องไหม?<br><br>ชื่อ-สกุล: <b class="text-primary fs-3 d-block my-2">${student.fullName}</b>ชั้น: <b class="fs-4">${student.className}</b> | เลขที่: <b class="fs-4">${student.studentNo}</b><br><br>ใช่ข้อมูลของคุณหรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: '✔️ ใช่, นี่คือชื่อของฉัน',
+        cancelButtonText: '❌ ไม่ใช่, กรอกรหัสใหม่',
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#dc3545',
+        reverseButtons: true,
+        customClass: { title: 'fs-2', htmlContainer: 'fs-4', confirmButton: 'fs-4 py-2', cancelButton: 'fs-4 py-2' }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fillStudentFields(student);
+          showQuestionnaireUI();
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ยืนยันสำเร็จ เข้าสู่หน้าประเมิน', showConfirmButton: false, timer: 2000 });
+        } else {
+          selectRole(role);
+        }
+      });
+    }
+
+    function showQuestionnaireUI() {
+      document.getElementById("step1_role").style.display = "none";
+      document.getElementById("step3_questionnaire").style.display = "block";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetView() {
+      document.getElementById("step1_role").style.display = "block";
+      document.getElementById("step3_questionnaire").style.display = "none";
+      document.getElementById("sdqForm").reset();
+      toggleBackQuestions();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function fillStudentFields(s) {
+      document.getElementById("fullName").value = s.fullName || "";
+      document.getElementById("nickname").value = s.nickname || "";
+      document.getElementById("className").value = s.className || "";
+      document.getElementById("studentNo").value = s.studentNo || "";
+      document.getElementById("dob").value = s.dob || "";
+    }
+
+    function toggleBackQuestions() {
+      const b1Value = document.getElementById("b1").value;
+      const extQ = document.getElementById("extendedQuestions");
+      if(b1Value === "ไม่" || b1Value === "") {
+        extQ.style.display = "none";
+        extQ.querySelectorAll('select').forEach(s => s.removeAttribute('required'));
+      } else {
+        extQ.style.display = "block";
+        extQ.querySelectorAll('select').forEach(s => s.setAttribute('required', 'true'));
+      }
+    }
+
+    function submitForm(e) {
+      e.preventDefault();
+      const btn = document.getElementById("submitBtn");
+      btn.disabled = true;
+      btn.innerHTML = "⏳ กำลังบันทึกข้อมูล... กรุณารอสักครู่";
+      
+      const form = document.getElementById("sdqForm");
+      const formData = new FormData(form);
+
+      // ยิงข้อมูลบันทึกลงชีตข้ามค่ายไปยังระบบ GAS (API)
+      fetch(WEB_APP_URL, {
+        method: "POST",
+        body: formData
+      })
+      .then(res => res.json())
+      .then(res => {
+        if(res.status === "success") {
+          Swal.fire({
+            title: 'บันทึกสำเร็จ!',
+            text: res.message || 'ระบบได้เก็บข้อมูลแบบประเมินเรียบร้อยแล้ว ขอขอบพระคุณครับ',
+            icon: 'success',
+            confirmButtonText: 'ตกลง',
+            customClass: { title: 'fs-2', htmlContainer: 'fs-4', confirmButton: 'fs-4 px-5 py-2' }
+          }).then(() => {
+            resetView(); 
+            loadStats(); 
+          });
+        } else {
+          Swal.fire('เกิดข้อผิดพลาด', res.message, 'error');
+        }
+      })
+      .catch(err => {
+        console.error("Submit Error:", err);
+        Swal.fire('เชื่อมต่อล้มเหลว', 'เกิดปัญหาระหว่างส่งข้อมูลไปเซิร์ฟเวอร์', 'error');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = "💾 บันทึกแบบประเมินเรียบร้อย";
+      });
+    }
+  </script>
 </body>
 </html>
