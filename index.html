@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Student Care System</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+    --primary:#1E4E79;
+    --primary-light:#EEF5FC;
+    --bg:#F5F7FA;
+    --text:#2D3748;
+    --muted:#718096;
+    --border:#E2E8F0;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Kanit',sans-serif;
+}
+
+body{
+    background:var(--bg);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:420px;
+}
+
+.card{
+    background:#fff;
+    border-radius:28px;
+    padding:28px 22px;
+    box-shadow:0 10px 35px rgba(0,0,0,.08);
+}
+
+.header{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.logo{
+    width:90px;
+    height:90px;
+    margin:auto;
+    border-radius:50%;
+    background:var(--primary-light);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:42px;
+    margin-bottom:15px;
+}
+
+.title{
+    font-size:28px;
+    font-weight:700;
+    color:var(--primary);
+    line-height:1.2;
+}
+
+.subtitle{
+    margin-top:10px;
+    color:var(--muted);
+    font-size:16px;
+    line-height:1.7;
+}
+
+.menu{
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.menu-btn{
+    text-decoration:none;
+    color:var(--text);
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    transition:.25s;
+}
+
+.menu-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.icon{
+    width:55px;
+    height:55px;
+    border-radius:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
+    flex-shrink:0;
+}
+
+.gps{
+    background:#EAF4FF;
+}
+
+.sdq{
+    background:#F3F8EE;
+}
+
+.student{
+    background:#FFF8EB;
+}
+
+.menu-text{
+    flex:1;
+}
+
+.menu-title{
+    font-size:17px;
+    font-weight:600;
+}
+
+.menu-sub{
+    font-size:13px;
+    color:var(--muted);
+}
+
+.arrow{
+    color:#A0AEC0;
+    font-size:20px;
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.school{
+    margin-top:5px;
+    font-weight:500;
+    color:var(--primary);
+}
+
+@media(max-width:480px){
+
+    .card{
+        padding:24px 18px;
+    }
+
+    .title{
+        font-size:24px;
+    }
+
+    .menu-btn{
+        padding:16px;
+    }
+
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="header">
+
+            <div class="logo">
+                🎓
+            </div>
+
+            <div class="title">
+                Student Care System
+            </div>
+
+            <div class="subtitle">
+                มัธยมศึกษาปีที่ 1<br>
+                ปีการศึกษา 2569
+            </div>
+
+        </div>
+
+        <div class="menu">
+
+            <a href="https://krueak-kts.github.io/hgps/" class="menu-btn">
+                <div class="icon gps">📍</div>
+
+                <div class="menu-text">
+                    <div class="menu-title">
+                        ปักหมุด GPS บ้าน
+                    </div>
+                    <div class="menu-sub">
+                        ระบุตำแหน่งที่พักอาศัยของนักเรียน
+                    </div>
+                </div>
+
+                <div class="arrow">›</div>
+            </a>
+
+            <a href="#" class="menu-btn">
+                <div class="icon sdq">📝</div>
+
+                <div class="menu-text">
+                    <div class="menu-title">
+                        กรอกแบบ SDQ
+                    </div>
+                    <div class="menu-sub">
+                        แบบประเมินจุดแข็งและจุดอ่อน
+                    </div>
+                </div>
+
+                <div class="arrow">›</div>
+            </a>
+
+            <a href="https://script.google.com/a/macros/maeoowit.ac.th/s/AKfycbxLSM9Op-Bcs_Xb9DGipRdIGj_1CpWVy5BH4jVuStHCZQb94e_jlSS0yz3A2nrKGUep/exec" class="menu-btn">
+                <div class="icon student">👨‍🎓</div>
+
+                <div class="menu-text">
+                    <div class="menu-title">
+                        กรอกข้อมูลนักเรียน
+                    </div>
+                    <div class="menu-sub">
+                        ข้อมูลพื้นฐานสำหรับระบบดูแลช่วยเหลือเบื้องต้น
+                    </div>
+                </div>
+
+                <div class="arrow">›</div>
+            </a>
+
+        </div>
+
+        <div class="footer">
+            ระบบดูแลช่วยเหลือนักเรียน
+            <div class="school">
+                โรงเรียนแม่อ้อวิทยาคม
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
