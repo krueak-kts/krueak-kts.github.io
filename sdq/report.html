@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรายงานสรุปผล SDQ ทางการ</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* --- สไตล์หน้าจอ (Screen Styles) เพิ่มขนาดให้อ่านชัดเจน --- */
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,700;1,400&display=swap');
+    
+    body { 
+      background-color: #f4f6f9; 
+      font-family: 'TH Sarabun New', 'TH Sarabun PSK', 'Sarabun', sans-serif; 
+      font-size: 18px; 
+      padding: 20px; 
+    }
+    .card-report { 
+      border-radius: 8px; 
+      border: 1px solid #dee2e6; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+      background: #fff; 
+      margin-bottom: 25px; 
+      padding: 35px; 
+    }
+    .table {
+      font-size: 18px; 
+    }
+    .badge-status {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 1rem;
+      display: inline-block;
+    }
+    .badge-ปกติ { background-color: #d1e7dd; color: #0f5132; }
+    .badge-เสี่ยง { background-color: #fff3cd; color: #664d03; }
+    .badge-มีปัญหา { background-color: #f8d7da; color: #842029; }
+    .badge-จุดแข็ง { background-color: #cfe2ff; color: #084298; }
+    .badge-ไม่มีจุดแข็ง { background-color: #e2e3e5; color: #41464b; }
+    
+    .nav-tabs .nav-link { font-size: 1.15rem; color: #495057; padding: 12px 20px; }
+    .nav-tabs .nav-link.active { color: #0d6efd; font-weight: bold; border-bottom: 4px solid #0d6efd; }
+    .official-header { border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; font-weight: bold; font-size: 1.25rem; color: #000;}
+
+    /* --- สไตล์สำหรับการพิมพ์กระดาษ A4 ทางการ (Print Stylesheet) จัดให้พอดี 1 หน้า --- */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 1.5cm; 
+      }
+      
+      .no-print, .nav-tabs, button, select, .alert, .btn { 
+        display: none !important; 
+      }
+      
+      body { 
+        background: #fff !important; 
+        color: #000 !important;
+        font-family: 'TH Sarabun New', 'TH Sarabun PSK', 'Sarabun', sans-serif !important;
+        font-size: 15pt !important; 
+        line-height: 1.3 !important; 
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      
+      .card-report {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+        page-break-after: always;
+      }
+      
+      .card-report:last-child {
+        page-break-after: avoid;
+      }
+
+      .table {
+        border-color: #000 !important;
+        color: #000 !important;
+        font-size: 14pt !important; 
+        margin-bottom: 15px !important;
+      }
+      .table th, .table td {
+        border: 1px solid #000 !important;
+        background-color: transparent !important;
+        color: #000 !important;
+        padding: 3px 5px !important; 
+      }
+      .table-light, .table-primary, .table-success {
+        background: transparent !important;
+        color: #000 !important;
+      }
+      
+      .badge-status {
+        background: transparent !important;
+        color: #000 !important;
+        padding: 0 !important;
+        font-weight: bold !important;
+        text-decoration: underline !important;
+      }
+      
+      tr { page-break-inside: avoid; }
+      
+      .official-header {
+        border-bottom: 2px solid #000 !important;
+        color: #000 !important;
+        font-size: 15pt !important;
+        margin-top: 15px !important;
+        margin-bottom: 8px !important;
+      }
+      
+      .signature-section {
+        margin-top: 25px !important;
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container" style="max-width: 1050px;">
+    
+    <div class="text-center mb-4 no-print">
+      <h2 class="fw-bold text-secondary">📋 ออกรายงานการประเมินพฤติกรรมเด็ก (SDQ) ฉบับทางการ</h2>
+      <p class="text-muted fs-5">ระบบจัดระยะหน้ากระดาษ A4 อัตโนมัติ (ขาว-ดำ เมื่อสั่งพิมพ์ตามแบบฟอร์ม สพฐ.)</p>
+    </div>
+
+    <ul class="nav nav-tabs mb-4 no-print" id="reportTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="indiv-tab" data-bs-toggle="tab" data-bs-target="#indiv-pane" type="button" role="tab">📄 1. รายงานรายบุคคล</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="class-tab" data-bs-toggle="tab" data-bs-target="#class-pane" type="button" role="tab">📊 2. สรุปรายชั้นเรียน (แยกด้าน)</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary-pane" type="button" role="tab">📈 3. สรุปภาพรวม 3 ด้าน (สพฐ.)</button>
+      </li>
+    </ul>
+
+    <div class="tab-content" id="reportTabsContent">
+      
+      <div class="tab-pane fade show active" id="indiv-pane" role="tabpanel">
+        <div class="card card-report p-4 no-print mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+              <label class="form-label fw-bold text-muted">เลือกรายชื่อนักเรียน</label>
+              <select id="studentSelect" class="form-select form-select-lg" onchange="loadStudentReport()">
+                <option value="">-- กำลังโหลดรายชื่อนักเรียน... --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-dark btn-lg w-100" onclick="window.print()">🖨️ พิมพ์รายงาน (A4)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="reportContent" class="card card-report" style="display: none;">
+          <div class="text-center mb-4">
+            <h4 class="fw-bold mb-1">แบบสรุปการให้คะแนนและการแปลผลภาพรวม รายบุคคล</h4>
+            <h5 class="fw-bold">การประเมินพฤติกรรมเด็ก (Strengths and Difficulties Questionnaire: SDQ)</h5>
+          </div>
+          
+          <div class="official-header">1. ข้อมูลทั่วไปของนักเรียน</div>
+          <table class="table table-bordered mb-4">
+            <tbody>
+              <tr>
+                <td style="width: 50%;"><strong>ชื่อ-นามสกุล:</strong> <span id="repName">-</span></td>
+                <td style="width: 20%;"><strong>ชื่อเล่น:</strong> <span id="repNickname">-</span></td>
+                <td style="width: 15%;"><strong>ชั้น:</strong> <span id="repClass">-</span></td>
+                <td style="width: 15%;"><strong>เลขที่:</strong> <span id="repNo">-</span></td>
+              </tr>
+              <tr>
+                <td colspan="4"><strong>รหัสประจำตัวนักเรียน:</strong> <span id="repId">-</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="official-header">2. ผลการวิเคราะห์คะแนนและการแปลผลการประเมินพฤติกรรม (5 ด้าน)</div>
+          <table class="table table-bordered align-middle text-center mb-4">
+            <thead>
+              <tr class="table-light">
+                <th rowspan="2" style="width: 40%; text-align: left; vertical-align: middle;">ด้านที่ทำการประเมินพฤติกรรม</th>
+                <th colspan="2">ครูประเมิน</th>
+                <th colspan="2">ผู้ปกครองประเมิน</th>
+                <th colspan="2">นักเรียนประเมินตนเอง</th>
+              </tr>
+              <tr class="table-light">
+                <th style="width: 10%;">คะแนน</th><th style="width: 10%;">แปลผล</th>
+                <th style="width: 10%;">คะแนน</th><th style="width: 10%;">แปลผล</th>
+                <th style="width: 10%;">คะแนน</th><th style="width: 10%;">แปลผล</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="text-start">1. พฤติกรรมด้านอารมณ์</td><td id="score-T-1">-</td><td><span id="result-T-1" class="badge-status">-</span></td><td id="score-P-1">-</td><td><span id="result-P-1" class="badge-status">-</span></td><td id="score-S-1">-</td><td><span id="result-S-1" class="badge-status">-</span></td></tr>
+              <tr><td class="text-start">2. พฤติกรรมเกเร / ความประพฤติ</td><td id="score-T-2">-</td><td><span id="result-T-2" class="badge-status">-</span></td><td id="score-P-2">-</td><td><span id="result-P-2" class="badge-status">-</span></td><td id="score-S-2">-</td><td><span id="result-S-2" class="badge-status">-</span></td></tr>
+              <tr><td class="text-start">3. พฤติกรรมไม่อยู่นิ่ง / สมาธิสั้น</td><td id="score-T-3">-</td><td><span id="result-T-3" class="badge-status">-</span></td><td id="score-P-3">-</td><td><span id="result-P-3" class="badge-status">-</span></td><td id="score-S-3">-</td><td><span id="result-S-3" class="badge-status">-</span></td></tr>
+              <tr><td class="text-start">4. พฤติกรรมด้านความสัมพันธ์กับเพื่อน</td><td id="score-T-4">-</td><td><span id="result-T-4" class="badge-status">-</span></td><td id="score-P-4">-</td><td><span id="result-P-4" class="badge-status">-</span></td><td id="score-S-4">-</td><td><span id="result-S-4" class="badge-status">-</span></td></tr>
+              <tr class="fw-bold" style="background-color: #f8f9fa;"><td class="text-start">คะแนนรวมพฤติกรรมที่เป็นปัญหา (ด้านที่ 1-4)</td><td id="score-T-total">-</td><td><span id="result-T-total" class="badge-status">-</span></td><td id="score-P-total">-</td><td><span id="result-P-total" class="badge-status">-</span></td><td id="score-S-total">-</td><td><span id="result-S-total" class="badge-status">-</span></td></tr>
+              <tr class="fw-bold"><td class="text-start">5. พฤติกรรมด้านสัมพันธภาพทางสังคม (จุดแข็ง)</td><td id="score-T-5">-</td><td><span id="result-T-5" class="badge-status">-</span></td><td id="score-P-5">-</td><td><span id="result-P-5" class="badge-status">-</span></td><td id="score-S-5">-</td><td><span id="result-S-5" class="badge-status">-</span></td></tr>
+            </tbody>
+          </table>
+
+          <div class="official-header">3. ผลการประเมินผลกระทบและความรุนแรงของปัญหา (ด้านหลังแบบประเมิน)</div>
+          <table class="table table-bordered mb-4">
+            <thead>
+              <tr class="table-light text-center">
+                <th style="width: 33.33%;">ฉบับครูประเมินนักเรียน</th>
+                <th style="width: 33.33%;">ฉบับผู้ปกครองประเมินนักเรียน</th>
+                <th style="width: 33.33%;">ฉบับนักเรียนประเมินตนเอง</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <p class="mb-1"><strong>ภาพรวมปัญหา:</strong> <span id="impact-T-b1">-</span></p>
+                  <p class="mb-0"><strong>ระดับผลการรบกวน:</strong> <span id="impact-T-result" class="badge-status">-</span></p>
+                </td>
+                <td>
+                  <p class="mb-1"><strong>ภาพรวมปัญหา:</strong> <span id="impact-P-b1">-</span></p>
+                  <p class="mb-0"><strong>ระดับผลการรบกวน:</strong> <span id="impact-P-result" class="badge-status">-</span></p>
+                </td>
+                <td>
+                  <p class="mb-1"><strong>ภาพรวมปัญหา:</strong> <span id="impact-S-b1">-</span></p>
+                  <p class="mb-0"><strong>ระดับผลการรบกวน:</strong> <span id="impact-S-result" class="badge-status">-</span></p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="row signature-section">
+            <div class="col-6 text-center"></div>
+            <div class="col-6 text-center">
+              <p class="mb-4">ลงชื่อ........................................................................ ครูที่ปรึกษา</p>
+              <p class="mb-0">(........................................................................)</p>
+              <p class="text-muted small mt-2">วันที่พิมพ์เอกสาร: <span class="printDate"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="class-pane" role="tabpanel">
+        <div class="card card-report p-4 no-print mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">เลือกห้องเรียน</label>
+              <select id="classSelect" class="form-select form-select-lg" onchange="loadClassSummary()">
+                <option value="">-- รอข้อมูล --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">เลือกชุดข้อมูลผู้ประเมิน</label>
+              <select id="roleSelect" class="form-select form-select-lg" onchange="loadClassSummary()">
+                <option value="ครู">ครูประเมินนักเรียน</option>
+                <option value="ผู้ปกครอง">ผู้ปกครองประเมินนักเรียน</option>
+                <option value="นักเรียน">นักเรียนประเมินตนเอง</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-dark btn-lg w-100" onclick="window.print()">🖨️ พิมพ์รายงานสรุปห้อง (A4)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="classSummaryContent" class="card card-report" style="display: none;">
+          <div class="text-center mb-4">
+            <h4 class="fw-bold mb-1">แบบรายงานสรุปผลการประเมินพฤติกรรมเด็ก (SDQ) รายชั้นเรียน</h4>
+            <h5 class="fw-bold">ระดับชั้นห้องเรียน: <span id="sumClassName">-</span> | แหล่งข้อมูล: ฉบับ<span id="sumRoleName">-</span></h5>
+          </div>
+          
+          <div class="alert alert-light border text-center mb-3 no-print fs-5">
+            จำนวนนักเรียนทั้งหมดในห้อง: <strong id="sumTotalStudents">0</strong> คน | 
+            ประเมินเสร็จสิ้น: <strong class="text-success" id="sumAssessed">0</strong> คน | 
+            ยังไม่ได้รับประเมิน: <strong class="text-danger" id="sumPending">0</strong> คน
+          </div>
+
+          <div class="official-header">1. ตารางสรุปผลการประเมินกลุ่มพฤติกรรมเสี่ยง/มีปัญหา (ด้านที่ 1 - 4)</div>
+          <table class="table table-bordered text-center align-middle mb-4">
+            <thead>
+              <tr class="table-light">
+                <th rowspan="2" style="width: 40%; text-align: left;">กลุ่มพฤติกรรมที่ทำการประเมิน</th>
+                <th colspan="2">กลุ่มปกติ</th>
+                <th colspan="2">กลุ่มเสี่ยง</th>
+                <th colspan="2">กลุ่มมีปัญหา</th>
+              </tr>
+              <tr class="table-light">
+                <th>จำนวน (คน)</th><th>ร้อยละ (%)</th>
+                <th>จำนวน (คน)</th><th>ร้อยละ (%)</th>
+                <th>จำนวน (คน)</th><th>ร้อยละ (%)</th>
+              </tr>
+            </thead>
+            <tbody id="classSummaryBody"></tbody>
+          </table>
+
+          <div class="official-header">2. ตารางสรุปผลการประเมินพฤติกรรมสัมพันธภาพทางสังคม (ด้านจุดแข็ง)</div>
+          <table class="table table-bordered text-center align-middle mb-4">
+            <thead>
+              <tr class="table-light">
+                <th rowspan="2" style="width: 40%; text-align: left;">กลุ่มพฤติกรรมสัมพันธภาพทางสังคม</th>
+                <th colspan="2">กลุ่มมีจุดแข็ง</th>
+                <th colspan="2">กลุ่มไม่มีจุดแข็ง</th>
+              </tr>
+              <tr class="table-light">
+                <th>จำนวน (คน)</th><th>ร้อยละ (%)</th>
+                <th>จำนวน (คน)</th><th>ร้อยละ (%)</th>
+              </tr>
+            </thead>
+            <tbody id="classStrengthBody"></tbody>
+          </table>
+
+          <div class="row signature-section">
+            <div class="col-6 text-center"></div>
+            <div class="col-6 text-center">
+              <p class="mb-4">ลงชื่อ........................................................................ ครูที่ปรึกษาประจำชั้น</p>
+              <p class="mb-0">(........................................................................)</p>
+              <p class="text-muted small mt-2">วันที่พิมพ์เอกสาร: <span class="printDate"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-pane fade" id="summary-pane" role="tabpanel">
+        <div class="card card-report p-4 no-print mb-3">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+              <label class="form-label fw-bold">เลือกห้องเรียน</label>
+              <select id="classSummarySelect3" class="form-select form-select-lg" onchange="loadOverallSummary()">
+                <option value="">-- รอข้อมูล --</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <button class="btn btn-dark btn-lg w-100" onclick="window.print()">🖨️ พิมพ์รายงานภาพรวม 3 ด้าน (A4)</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="overallSummaryContent" class="card card-report" style="display: none;">
+          <div class="text-center mb-4">
+            <h4 class="fw-bold mb-1">ผลการประเมินพฤติกรรมนักเรียน SDQ ทั้ง 3 ด้าน</h4>
+            <h5 class="fw-bold">ระดับชั้นห้องเรียน: <span id="allClassName">-</span></h5>
+          </div>
+
+          <div class="official-header">1. สรุปผลการประเมินพฤติกรรมนักเรียน SDQ ทั้ง 3 ด้าน (คะแนนรวมปัญหา 4 ด้านหลัก)</div>
+          <table class="table table-bordered text-center align-middle mb-4">
+            <thead>
+              <tr class="table-light">
+                <th rowspan="2" style="width: 28%; text-align: left;">การประเมินรายด้าน / ผู้ประเมิน</th>
+                <th rowspan="2" style="width: 18%;">จำนวนนักเรียน<br>ทั้งหมด (คน)</th>
+                <th rowspan="2" style="width: 18%;">ประเมินแล้ว<br>(คน)</th>
+                <th colspan="2">กลุ่มปกติ</th>
+                <th colspan="2">กลุ่มเสี่ยง</th>
+                <th colspan="2">กลุ่มมีปัญหา</th>
+              </tr>
+              <tr class="table-light">
+                <th>(คน)</th><th>ร้อยละ</th>
+                <th>(คน)</th><th>ร้อยละ</th>
+                <th>(คน)</th><th>ร้อยละ</th>
+              </tr>
+            </thead>
+            <tbody id="allSummaryBody"></tbody>
+          </table>
+
+          <div class="official-header" style="margin-top: 25px;">2. ผลการประเมินพฤติกรรมด้านสัมพันธภาพทางสังคม (จุดแข็งของเด็ก) ทั้ง 3 ด้าน</div>
+          <table class="table table-bordered text-center align-middle mb-4">
+            <thead>
+              <tr class="table-light">
+                <th rowspan="2" style="width: 28%; text-align: left;">การประเมินรายด้าน / ผู้ประเมิน</th>
+                <th rowspan="2" style="width: 18%;">จำนวนนักเรียน<br>ทั้งหมด (คน)</th>
+                <th rowspan="2" style="width: 18%;">ประเมินแล้ว<br>(คน)</th>
+                <th colspan="2">กลุ่มมีจุดแข็ง</th>
+                <th colspan="2">กลุ่มไม่มีจุดแข็ง</th>
+              </tr>
+              <tr class="table-light">
+                <th>(คน)</th><th>ร้อยละ</th>
+                <th>(คน)</th><th>ร้อยละ</th>
+              </tr>
+            </thead>
+            <tbody id="allStrengthBody"></tbody>
+          </table>
+
+          <div class="row signature-section">
+            <div class="col-6 text-center"></div>
+            <div class="col-6 text-center">
+              <p class="mb-4">ลงชื่อ........................................................................ ครูที่ปรึกษาประจำชั้น</p>
+              <p class="mb-0">(........................................................................)</p>
+              <p class="text-muted small mt-2">วันที่พิมพ์เอกสาร: <span class="printDate"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // 🔗 แก้ไขจุดนี้: วางลิงก์ Web App ของคุณที่ได้มาจากการ Deploy ใน Google Apps Script
+    // ⚠️ ข้อควรระวัง: นำลิงก์มาวางในเครื่องหมายคำพูดด้านล่างให้ถูกต้อง
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwuLn76nG2a68APykzWPgMN76il15JmIJU_AxVaF45rlujTDF1S-IDhwuFexT-SROmw/exec";
+
+    let rawStudents = [];
+    let allEvaluations = [];
+
+    function normalizeName(str) {
+      if(!str) return "";
+      return String(str).replace(/^(เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|นาย|นางสาว|นาง)\.?\s*/, "").replace(/\s+/g, "").trim();
+    }
+
+    window.onload = function() {
+      // แสดง Popup แจ้งเตือนว่าระบบกำลังดึงข้อมูลข้ามค่าย (API)
+      Swal.fire({
+        title: 'กำลังเชื่อมต่อฐานข้อมูล...',
+        text: 'กรุณารอสักครู่ ระบบกำลังดึงประวัติการประเมิน',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      // ดึงข้อมูลรายชื่อและประวัติการประเมินทั้งหมดจาก Google Apps Script API
+      fetch(`${WEB_APP_URL}?action=getReportDashboardData`)
+        .then(response => response.json())
+        .then(data => {
+          rawStudents = data.students;
+          allEvaluations = data.evaluations;
+          
+          let studentSelect = document.getElementById("studentSelect");
+          studentSelect.innerHTML = '<option value="">-- กรุณาเลือกรายชื่อนักเรียน --</option>';
+          rawStudents.forEach((s, index) => {
+            let opt = document.createElement("option");
+            opt.value = index;
+            opt.textContent = `เลขที่ ${s.studentNo} : ${s.fullName} (${s.className})`;
+            studentSelect.appendChild(opt);
+          });
+
+          let classSelect = document.getElementById("classSelect");
+          let classSelect3 = document.getElementById("classSummarySelect3");
+          let uniqueClasses = [...new Set(rawStudents.map(item => item.className).filter(c => c))];
+          
+          classSelect.innerHTML = '<option value="">-- เลือกห้องเรียน --</option>';
+          classSelect3.innerHTML = '<option value="">-- เลือกห้องเรียน --</option>';
+          
+          uniqueClasses.sort().forEach(c => {
+            let opt = document.createElement("option");
+            opt.value = c;
+            opt.textContent = `ชั้น ${c}`;
+            classSelect.appendChild(opt.cloneNode(true));
+            classSelect3.appendChild(opt);
+          });
+
+          // ปิดหน้าจอโหลดเมื่อสำเร็จ
+          Swal.close();
+        })
+        .catch(err => {
+          console.error("Error Loading Data:", err);
+          Swal.fire('ข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อฐานข้อมูล Google Sheet ได้ กรุณาตรวจสอบลิงก์ WEB_APP_URL', 'error');
+        });
+      
+      document.querySelectorAll(".printDate").forEach(el => el.textContent = new Date().toLocaleDateString('th-TH'));
+    };
+
+    function calculateSDQ(evalData) {
+      if(!evalData) return null;
+      let q = (num) => parseInt(evalData[`q${num}`]) || parseInt(evalData[`Q${num}`]) || 0;
+      let rev = (num) => 2 - q(num); 
+
+      let c1 = q(3) + q(8) + q(13) + q(16) + q(24);
+      let c2 = q(5) + rev(7) + q(12) + q(18) + q(22);
+      let c3 = q(2) + q(10) + q(15) + rev(21) + rev(25);
+      let c4 = q(6) + rev(11) + rev(14) + q(19) + q(23);
+      let c5 = q(1) + q(4) + q(9) + q(17) + q(20);
+      let total = c1 + c2 + c3 + c4;
+      
+      let isStudent = (String(evalData['Role']).trim() === 'นักเรียน');
+
+      return {
+        scores: [c1, c2, c3, c4, total, c5],
+        results: [
+          getCriteria(1, c1, isStudent),
+          getCriteria(2, c2, isStudent),
+          getCriteria(3, c3, isStudent),
+          getCriteria(4, c4, isStudent),
+          getCriteria('total', total, isStudent),
+          getCriteria(5, c5, isStudent)
+        ]
+      };
+    }
+
+    function getCriteria(side, score, isStudent) {
+      if (isStudent) {
+        if (side === 1) return (score <= 5) ? "ปกติ" : (score === 6) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 2) return (score <= 4) ? "ปกติ" : (score === 5) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 3) return (score <= 5) ? "ปกติ" : (score === 6) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 4) return (score <= 3) ? "ปกติ" : (score === 4) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 5) return (score >= 4) ? "มีจุดแข็ง" : "ไม่มีจุดแข็ง"; 
+        if (side === 'total') return (score <= 16) ? "ปกติ" : (score <= 18) ? "เสี่ยง" : "มีปัญหา"; 
+      } else {
+        if (side === 1) return (score <= 3) ? "ปกติ" : (score === 4) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 2) return (score <= 3) ? "ปกติ" : (score === 4) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 3) return (score <= 5) ? "ปกติ" : (score === 6) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 4) return (score <= 5) ? "ปกติ" : (score === 6) ? "เสี่ยง" : "มีปัญหา"; 
+        if (side === 5) return (score >= 4) ? "มีจุดแข็ง" : "ไม่มีจุดแข็ง"; 
+        if (side === 'total') return (score <= 15) ? "ปกติ" : (score <= 17) ? "เสี่ยง" : "มีปัญหา"; 
+      }
+    }
+
+    // ==========================================
+    // TAB 1 & 2: ฟังก์ชันทำงานส่วนเดิม
+    // ==========================================
+    function loadStudentReport() {
+      let idx = document.getElementById("studentSelect").value;
+      if(idx === "") { document.getElementById("reportContent").style.display = "none"; return; }
+
+      let student = rawStudents[idx];
+      document.getElementById("repName").textContent = student.fullName;
+      document.getElementById("repNickname").textContent = student.nickname || "-";
+      document.getElementById("repClass").textContent = student.className;
+      document.getElementById("repNo").textContent = student.studentNo;
+      document.getElementById("repId").textContent = student.id;
+
+      let targetName = normalizeName(student.fullName);
+
+      let evalT = allEvaluations.find(e => normalizeName(e['ชื่อ-สกุล']) === targetName && String(e['Role']).trim() === 'ครู');
+      let evalP = allEvaluations.find(e => normalizeName(e['ชื่อ-สกุล']) === targetName && String(e['Role']).trim() === 'ผู้ปกครอง');
+      let evalS = allEvaluations.find(e => normalizeName(e['ชื่อ-สกุล']) === targetName && String(e['Role']).trim() === 'นักเรียน');
+
+      renderRoleColumn('T', evalT);
+      renderRoleColumn('P', evalP);
+      renderRoleColumn('S', evalS);
+
+      document.getElementById("reportContent").style.display = "block";
+    }
+
+    function renderRoleColumn(prefix, evalData) {
+      if(!evalData) {
+        [1,2,3,4,'total',5].forEach(f => {
+          document.getElementById(`score-${prefix}-${f}`).textContent = "-";
+          document.getElementById(`result-${prefix}-${f}`).className = "badge-status";
+          document.getElementById(`result-${prefix}-${f}`).textContent = "ไม่มีข้อมูล";
+        });
+        document.getElementById(`impact-${prefix}-b1`).textContent = "-";
+        document.getElementById(`impact-${prefix}-result`).textContent = "-";
+        document.getElementById(`impact-${prefix}-result`).className = "badge-status";
+        return;
+      }
+
+      let res = calculateSDQ(evalData);
+      [1,2,3,4,'total',5].forEach((f, idx) => {
+        document.getElementById(`score-${prefix}-${f}`).textContent = res.scores[idx];
+        let rTxt = res.results[idx];
+        let el = document.getElementById(`result-${prefix}-${f}`);
+        el.textContent = rTxt;
+        el.className = `badge-status badge-${rTxt.includes("จุดแข็ง") ? (rTxt==="มีจุดแข็ง"?"จุดแข็ง":"ไม่มีจุดแข็ง") : rTxt}`;
+      });
+
+      document.getElementById(`impact-${prefix}-b1`).textContent = evalData['ปัญหาโดยรวม'] || "ไม่เลย";
+      let impScore = (val) => { let v = String(val).trim(); return (v === "ค่อนข้างมาก" || v === "1") ? 1 : (v === "มาก" || v === "2") ? 2 : 0; };
+      let totalImpact = impScore(evalData['ความไม่สบายใจ']) + impScore(evalData['ผลกระทบ_คบเพื่อน']) + impScore(evalData['ผลกระทบ_การเรียน']) + impScore(evalData['ความยุ่งยากต่อชั้นเรียน']);
+      let impResult = (totalImpact >= 3) ? "มีปัญหา" : (totalImpact >= 1) ? "เสี่ยง" : "ปกติ";
+      
+      let impEl = document.getElementById(`impact-${prefix}-result`);
+      impEl.textContent = impResult;
+      impEl.className = `badge-status badge-${impResult}`;
+    }
+
+    function loadClassSummary() {
+      let selectedClass = document.getElementById("classSelect").value;
+      let selectedRole = document.getElementById("roleSelect").value;
+
+      if(!selectedClass) { document.getElementById("classSummaryContent").style.display = "none"; return; }
+
+      document.getElementById("sumClassName").textContent = selectedClass;
+      document.getElementById("sumRoleName").textContent = selectedRole;
+
+      let studentsInClass = rawStudents.filter(s => s.className === selectedClass);
+      let totalStudents = studentsInClass.length;
+      
+      let tally = [
+        { name: "1. พฤติกรรมด้านอารมณ์", ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0 },
+        { name: "2. พฤติกรรมเกเร / ความประพฤติ", ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0 },
+        { name: "3. พฤติกรรมไม่อยู่นิ่ง / สมาธิสั้น", ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0 },
+        { name: "4. พฤติกรรมด้านความสัมพันธ์กับเพื่อน", ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0 },
+        { name: "คะแนนรวมพฤติกรรมที่เป็นปัญหา (ด้านที่ 1-4)", ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0 }
+      ];
+      let strengthTally = { มีจุดแข็ง: 0, ไม่มีจุดแข็ง: 0 };
+      let assessedCount = 0;
+
+      studentsInClass.forEach(student => {
+        let targetName = normalizeName(student.fullName);
+        let evalData = allEvaluations.find(e => normalizeName(e['ชื่อ-สกุล']) === targetName && String(e['Role']).trim() === selectedRole);
+        
+        if(evalData) {
+          assessedCount++;
+          let res = calculateSDQ(evalData);
+          for(let i=0; i<5; i++) { tally[i][res.results[i]]++; }
+          strengthTally[res.results[5]]++;
+        }
+      });
+
+      document.getElementById("sumTotalStudents").textContent = totalStudents;
+      document.getElementById("sumAssessed").textContent = assessedCount;
+      document.getElementById("sumPending").textContent = totalStudents - assessedCount;
+
+      let tbody = document.getElementById("classSummaryBody");
+      tbody.innerHTML = "";
+      
+      if(assessedCount === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-danger fw-bold py-4">ไม่พบข้อมูลการบันทึกสรุปผลประเมินในห้องเรียนและกลุ่มผู้ประเมินนี้</td></tr>`;
+        document.getElementById("classStrengthBody").innerHTML = `<tr><td colspan="5" class="text-danger py-2">ไม่มีข้อมูล</td></tr>`;
+        document.getElementById("classSummaryContent").style.display = "block";
+        return;
+      }
+
+      let pct = (val) => assessedCount > 0 ? ((val / assessedCount) * 100).toFixed(2) : "0.00";
+
+      tally.forEach((t, i) => {
+        let tr = document.createElement("tr");
+        if(i === 4) tr.className = "fw-bold";
+        tr.innerHTML = `
+          <td class="text-start">${t.name}</td>
+          <td>${t.ปกติ}</td><td>${pct(t.ปกติ)}%</td>
+          <td>${t.เสี่ยง}</td><td>${pct(t.เสี่ยง)}%</td>
+          <td>${t.มีปัญหา}</td><td>${pct(t.มีปัญหา)}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("classStrengthBody").innerHTML = `
+        <tr>
+          <td class="text-start">5. พฤติกรรมด้านสัมพันธภาพทางสังคม (จุดแข็งของเด็ก)</td>
+          <td>${strengthTally['มีจุดแข็ง']}</td><td>${pct(strengthTally['มีจุดแข็ง'])}%</td>
+          <td>${strengthTally['ไม่มีจุดแข็ง']}</td><td>${pct(strengthTally['ไม่มีจุดแข็ง'])}%</td>
+        </tr>
+      `;
+
+      document.getElementById("classSummaryContent").style.display = "block";
+    }
+
+    // ========================================================
+    // TAB 3: ฟังก์ชันใหม่ คำนวณสรุปเปรียบเทียบ 3 ด้านหลัก (สพฐ.)
+    // ========================================================
+    function loadOverallSummary() {
+      let selectedClass = document.getElementById("classSummarySelect3").value;
+      if(!selectedClass) { document.getElementById("overallSummaryContent").style.display = "none"; return; }
+
+      document.getElementById("allClassName").textContent = selectedClass;
+
+      let studentsInClass = rawStudents.filter(s => s.className === selectedClass);
+      let totalStudents = studentsInClass.length;
+
+      let roles = ['นักเรียน', 'ครู', 'ผู้ปกครอง'];
+      let roleDisplay = { 'นักเรียน': 'สรุปภาพรวมนักเรียน (ตนเอง)', 'ครู': 'สรุปภาพรวมครู', 'ผู้ปกครอง': 'สรุปภาพรวมผู้ปกครอง' };
+      
+      let summaryData = {};
+      roles.forEach(r => {
+        summaryData[r] = {
+          assessed: 0,
+          ปกติ: 0, เสี่ยง: 0, มีปัญหา: 0,
+          มีจุดแข็ง: 0, ไม่มีจุดแข็ง: 0
+        };
+      });
+
+      studentsInClass.forEach(student => {
+        let targetName = normalizeName(student.fullName);
+        
+        roles.forEach(role => {
+          let evalData = allEvaluations.find(e => normalizeName(e['ชื่อ-สกุล']) === targetName && String(e['Role']).trim() === role);
+          if(evalData) {
+            summaryData[role].assessed++;
+            let res = calculateSDQ(evalData);
+            
+            let totalProblemResult = res.results[4]; 
+            summaryData[role][totalProblemResult]++;
+            
+            let strengthResult = res.results[5];
+            summaryData[role][strengthResult]++;
+          }
+        });
+      });
+
+      let tbody1 = document.getElementById("allSummaryBody");
+      tbody1.innerHTML = "";
+      
+      roles.forEach(role => {
+        let d = summaryData[role];
+        let tr = document.createElement("tr");
+        let pct = (val) => d.assessed > 0 ? ((val / d.assessed) * 100).toFixed(2) : "0.00";
+        
+        tr.innerHTML = `
+          <td class="text-start fw-bold">${roleDisplay[role]}</td>
+          <td>${totalStudents}</td>
+          <td>${d.assessed}</td>
+          <td>${d.ปกติ}</td><td>${pct(d.ปกติ)}%</td>
+          <td>${d.เสี่ยง}</td><td>${pct(d.เสี่ยง)}%</td>
+          <td>${d.มีปัญหา}</td><td>${pct(d.มีปัญหา)}%</td>
+        `;
+        tbody1.appendChild(tr);
+      });
+
+      let tbody2 = document.getElementById("allStrengthBody");
+      tbody2.innerHTML = "";
+
+      roles.forEach(role => {
+        let d = summaryData[role];
+        let tr = document.createElement("tr");
+        let pct = (val) => d.assessed > 0 ? ((val / d.assessed) * 100).toFixed(2) : "0.00";
+        
+        tr.innerHTML = `
+          <td class="text-start fw-bold">${roleDisplay[role]}</td>
+          <td>${totalStudents}</td>
+          <td>${d.assessed}</td>
+          <td>${d.มีจุดแข็ง}</td><td>${pct(d.มีจุดแข็ง)}%</td>
+          <td>${d.ไม่มีจุดแข็ง}</td><td>${pct(d.ไม่มีจุดแข็ง)}%</td>
+        `;
+        tbody2.appendChild(tr);
+      });
+
+      document.getElementById("overallSummaryContent").style.display = "block";
+    }
+  </script>
+</body>
+</html>
