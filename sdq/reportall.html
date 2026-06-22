@@ -10,10 +10,13 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,700;1,400&display=swap');
     
+    /* =========================================
+       1. โหมดหน้าจอ (อ่านง่าย ตัวใหญ่ สบายตา)
+       ========================================= */
     body { 
       background-color: #e9ecef; 
       font-family: 'TH Sarabun New', 'TH Sarabun PSK', 'Sarabun', sans-serif; 
-      font-size: 16px; 
+      font-size: 18px; /* ขยายฟอนต์หน้าจอ */
       padding: 20px; 
     }
     
@@ -27,25 +30,27 @@
 
     .document-page {
       background: #fff;
-      padding: 1.5cm;
+      padding: 40px; /* เพิ่มพื้นที่ขอบหน้าจอ */
       box-shadow: 0 5px 20px rgba(0,0,0,0.1);
       margin: 0 auto;
-      max-width: 29.7cm; /* ขนาดความกว้าง A4 แนวนอน */
-      min-height: 21cm;
+      max-width: 100%;
       overflow-x: auto;
+      border-radius: 8px;
     }
 
-    /* ตกแต่งตาราง */
+    /* ตกแต่งตารางบนหน้าจอให้กว้างและอ่านง่าย */
     .table-sdq {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 15px;
+      margin-top: 20px;
+      min-width: 1200px; /* บังคับให้มีความกว้างพอที่จะอ่านง่าย (ถ้าจอมือถือจะเลื่อนซ้ายขวาได้) */
     }
     .table-sdq th, .table-sdq td {
       border: 1px solid #000;
-      padding: 4px 8px;
+      padding: 10px; /* เพิ่มช่องว่างในตารางบนหน้าจอ */
       vertical-align: middle;
       color: #000;
+      font-size: 18px;
     }
     .table-sdq th {
       background-color: #f8f9fa;
@@ -57,28 +62,34 @@
     .editable {
       display: inline-block;
       min-width: 50px;
-      border-bottom: 1px dashed #ccc;
+      border-bottom: 2px dashed #ccc;
       outline: none;
       color: #0d6efd;
       font-weight: bold;
       transition: 0.3s;
+      padding: 0 5px;
     }
     .editable:focus {
       background-color: #e9f1fe;
-      border-bottom: 1px solid #0d6efd;
+      border-bottom: 2px solid #0d6efd;
     }
 
     .doc-header {
       text-align: center;
-      margin-bottom: 20px;
-      line-height: 1.5;
+      margin-bottom: 25px;
+      line-height: 1.6;
     }
 
-    /* --- สไตล์สำหรับการพิมพ์ (A4 แนวนอน) --- */
+    .doc-header h4 { font-size: 26px; font-weight: bold; }
+    .doc-header .fs-5 { font-size: 22px !important; }
+
+    /* =========================================
+       2. โหมดสั่งพิมพ์ (พอดีกระดาษ A4 แนวนอน)
+       ========================================= */
     @media print {
       @page {
         size: A4 landscape; /* บังคับเป็นแนวนอน */
-        margin: 1cm;
+        margin: 10mm; /* ขอบกระดาษ 1 เซนติเมตร */
       }
       
       body { 
@@ -92,26 +103,38 @@
       .document-page {
         padding: 0 !important;
         box-shadow: none !important;
+        border-radius: 0 !important;
         max-width: 100% !important;
+        overflow: visible !important;
       }
 
       .editable {
         border-bottom: none !important;
         color: #000 !important;
         font-weight: normal !important;
+        padding: 0 !important;
+      }
+
+      /* ย่อขนาดตัวอักษรและส่วนหัวให้พอดีแผ่น */
+      .doc-header { margin-bottom: 10px !important; line-height: 1.2 !important; }
+      .doc-header h4 { font-size: 16pt !important; margin-bottom: 4px !important; }
+      .doc-header .fs-5 { font-size: 14pt !important; }
+
+      .table-sdq {
+        min-width: 100% !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+      }
+      
+      /* บีบตารางและย่อฟอนต์ลงเพื่อไม่ให้ล้นหน้า A4 */
+      .table-sdq th, .table-sdq td {
+        font-size: 11pt !important; /* ฟอนต์เล็กกระชับพอดี A4 */
+        padding: 4px !important; /* ลดระยะห่างในเซลล์ */
       }
 
       .table-sdq th {
         background-color: transparent !important;
         -webkit-print-color-adjust: exact;
-      }
-      
-      /* ปรับขนาดฟอนต์ตอนพิมพ์ให้พอดีช่อง */
-      .document-page { font-size: 14pt !important; }
-      .table-sdq { font-size: 13pt !important; }
-      
-      .badge-status {
-        font-weight: bold !important;
       }
     }
   </style>
@@ -149,8 +172,8 @@
   <div class="document-page" id="reportArea" style="display: none;">
     
     <div class="doc-header">
-      <h4 class="fw-bold mb-1">สรุปแปลผลการประเมินSDQ <span id="displayRole">ผู้ปกครองประเมิน</span></h4>
-      <div class="fs-5 mt-2">
+      <h4>สรุปแปลผลการประเมินSDQ <span id="displayRole">ผู้ปกครองประเมิน</span></h4>
+      <div class="fs-5">
         โรงเรียน<span class="editable" contenteditable="true">แม่อ้อวิทยาคม</span> 
         ตำบล<span class="editable" contenteditable="true">แม่อ้อ</span> 
         อำเภอ<span class="editable" contenteditable="true">พาน</span> 
@@ -166,8 +189,8 @@
     <table class="table-sdq">
       <thead>
         <tr>
-          <th rowspan="2" style="width: 5%;">เลขที่</th>
-          <th rowspan="2" style="width: 17%;">ชื่อ - สกุล</th>
+          <th rowspan="2" style="width: 4%;">เลขที่</th>
+          <th rowspan="2" style="width: 18%;">ชื่อ - สกุล</th>
           <th colspan="2">อารมณ์</th>
           <th colspan="2">ความประพฤติ</th>
           <th colspan="2">ไม่อยู่นิ่ง</th>
@@ -177,13 +200,13 @@
           <th colspan="2">ประเมินด้านหลัง</th>
         </tr>
         <tr>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
-          <th style="width: 4%;">คะแนน</th><th style="width: 7%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
+          <th style="width: 5%;">คะแนน</th><th style="width: 6%;">ผลแปล</th>
         </tr>
       </thead>
       <tbody id="tableBody">
@@ -219,7 +242,6 @@
           rawStudents = data.students;
           allEvaluations = data.evaluations;
           
-          // ดึงรายชื่อห้องที่ไม่ซ้ำกันไปใส่ใน Dropdown
           let classSelect = document.getElementById("classSelect");
           let uniqueClasses = [...new Set(rawStudents.map(item => item.className).filter(c => c))];
           
@@ -239,7 +261,6 @@
         });
     };
 
-    // ฟังก์ชันคำนวณคะแนน SDQ
     function calculateSDQ(evalData) {
       if(!evalData) return null;
       let q = (num) => parseInt(evalData[`q${num}`]) || parseInt(evalData[`Q${num}`]) || 0;
@@ -285,7 +306,6 @@
       }
     }
 
-    // สร้างตารางข้อมูล
     function generateTable() {
       let selectedClass = document.getElementById("classSelect").value;
       let selectedRole = document.getElementById("roleSelect").value;
@@ -296,13 +316,11 @@
         return;
       }
 
-      // เปลี่ยนหัวข้อให้ตรงกับสิ่งที่เลือก
       document.getElementById("displayClass").textContent = selectedClass;
       document.getElementById("displayRole").textContent = (selectedRole === "นักเรียน") ? "นักเรียนประเมินตนเอง" : selectedRole + "ประเมิน";
 
       let studentsInClass = rawStudents.filter(s => s.className === selectedClass);
       
-      // เรียงตามเลขที่
       studentsInClass.sort((a, b) => parseInt(a.studentNo || 0) - parseInt(b.studentNo || 0));
 
       let tbody = document.getElementById("tableBody");
@@ -318,25 +336,23 @@
         if(evalData) {
           let res = calculateSDQ(evalData);
           
-          // คำนวณด้านหลัง (ผลกระทบ)
           let impScoreFn = (val) => { let v = String(val).trim(); return (v === "ค่อนข้างมาก" || v === "1") ? 1 : (v === "มาก" || v === "2") ? 2 : 0; };
           let totalImpact = impScoreFn(evalData['ความไม่สบายใจ']) + impScoreFn(evalData['ผลกระทบ_คบเพื่อน']) + impScoreFn(evalData['ผลกระทบ_การเรียน']) + impScoreFn(evalData['ความยุ่งยากต่อชั้นเรียน']);
           let impResult = (totalImpact >= 3) ? "มีปัญหา" : (totalImpact >= 1) ? "เสี่ยง" : "ปกติ";
 
-          // เติมข้อมูล 5 ด้าน + รวม 4 ด้าน
           for(let i=0; i<6; i++) {
             let s = res.scores[i];
             let r = res.results[i];
             let color = (r.includes("มีปัญหา")) ? "red" : (r.includes("เสี่ยง") || r === "ไม่มีจุดแข็ง") ? "orange" : "black";
-            html += `<td class="text-center">${s}</td><td class="text-center" style="color:${color};">${r}</td>`;
+            let fw = (r !== "ปกติ" && r !== "มีจุดแข็ง") ? "font-weight:bold;" : "";
+            html += `<td class="text-center">${s}</td><td class="text-center" style="color:${color}; ${fw}">${r}</td>`;
           }
 
-          // เติมข้อมูลด้านหลัง
           let impColor = (impResult === "มีปัญหา") ? "red" : (impResult === "เสี่ยง") ? "orange" : "black";
-          html += `<td class="text-center">${totalImpact}</td><td class="text-center" style="color:${impColor};">${impResult}</td>`;
+          let impFw = (impResult !== "ปกติ") ? "font-weight:bold;" : "";
+          html += `<td class="text-center">${totalImpact}</td><td class="text-center" style="color:${impColor}; ${impFw}">${impResult}</td>`;
           
         } else {
-          // กรณียังไม่ได้ประเมิน
           for(let i=0; i<7; i++) {
             html += `<td class="text-center text-muted">-</td><td class="text-center text-muted">-</td>`;
           }
