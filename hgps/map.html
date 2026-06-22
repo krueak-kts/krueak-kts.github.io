@@ -120,39 +120,58 @@
       const latLngs = [];
 
       studentList.forEach(student => {
-        let displayPhotoUrl = '';
-        let fullPhotoUrl = '';
+        let displayStudentPhotoUrl = ''; // สำหรับแสดงรูปนักเรียนขนาดเล็ก
+        let fullHousePhotoUrl = '';      // สำหรับแสดงรูปบ้านตอนคลิกขยาย
 
-        if (student.photoUrl) {
-          // ดึง ID ของรูปภาพจากลิงก์ Google Drive
-          const match = student.photoUrl.match(/[-\w]{25,}/);
-          if (match && match[0]) {
-            // ใช้ Thumbnail API สำหรับรูปเล็กบนแผนที่ (โหลดไว ไม่ติดบล็อก)
-            displayPhotoUrl = `https://drive.google.com/thumbnail?id=${match[0]}&sz=w600`;
-            // ใช้ลิงก์ภาพความละเอียดสูงสำหรับตอนกดซูมภาพ
-            fullPhotoUrl = `https://drive.google.com/thumbnail?id=${match[0]}&sz=w1200`;
+        // 1. จัดการรูปนักเรียน (สำหรับแสดงบน Popup แผนที่)
+        if (student.studentPhotoUrl) {
+          const matchStudent = student.studentPhotoUrl.match(/[-\w]{25,}/);
+          if (matchStudent && matchStudent[0]) {
+            displayStudentPhotoUrl = `https://drive.google.com/thumbnail?id=${matchStudent[0]}&sz=w600`;
           } else {
-            displayPhotoUrl = student.photoUrl;
-            fullPhotoUrl = student.photoUrl;
+            displayStudentPhotoUrl = student.studentPhotoUrl;
           }
         }
 
-        let photoHtml = displayPhotoUrl 
-          ? `<img src="${displayPhotoUrl}" 
-                  onclick="showFullImage('${fullPhotoUrl}', '${student.fullName}')" 
-                  class="w-full h-32 object-cover rounded-lg mb-2 border shadow-sm cursor-pointer hover:opacity-80 transition duration-200" 
-                  title="คลิกเพื่อดูรูปขยาย" 
-                  onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">` 
-          : `<div class="w-full h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs border">ไม่มีรูปถ่ายสถานที่</div>`;
+        // 2. จัดการรูปบ้าน (สำหรับกดคลิกซูมดูภาพใหญ่)
+        if (student.photoUrl) {
+          const matchHouse = student.photoUrl.match(/[-\w]{25,}/);
+          if (matchHouse && matchHouse[0]) {
+            fullHousePhotoUrl = `https://drive.google.com/thumbnail?id=${matchHouse[0]}&sz=w1200`;
+          } else {
+            fullHousePhotoUrl = student.photoUrl;
+          }
+        }
 
-        // สร้างกรอบข้อความแสดงบนแผนที่
+        // สร้าง HTML แสดงผลรูปภาพ (ถ้ารูปบ้านไม่มี จะไม่เปิดให้กดคลิกขยาย หรือแสดงข้อความเตือน)
+        let photoHtml = '';
+        if (displayStudentPhotoUrl) {
+          if (fullHousePhotoUrl) {
+            // กรณีมีรูปนักเรียน และมีรูปบ้าน -> แสดงรูปนักเรียน กดแล้วขยายรูปบ้าน
+            photoHtml = `<img src="${displayStudentPhotoUrl}" 
+                              onclick="showFullImage('${fullHousePhotoUrl}', 'รูปถ่ายบ้านของ ${student.fullName}')" 
+                              class="w-full h-32 object-cover rounded-lg mb-2 border shadow-sm cursor-pointer hover:opacity-80 transition duration-200" 
+                              title="คลิกเพื่อดูรูปบ้านนักเรียน" 
+                              onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">`;
+          } else {
+            // กรณีมีรูปนักเรียน แต่ไม่มีรูปบ้าน -> แสดงรูปนักเรียน แต่กดคลิกไม่ได้
+            photoHtml = `<img src="${displayStudentPhotoUrl}" 
+                              class="w-full h-32 object-cover rounded-lg mb-2 border shadow-sm" 
+                              onerror="this.src='https://placehold.co/300x200?text=Image+Load+Error'">`;
+          }
+        } else {
+          // กรณีไม่มีรูปนักเรียนเลย
+          photoHtml = `<div class="w-full h-24 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs border">ไม่มีรูปถ่ายนักเรียน</div>`;
+        }
+
+        // สร้างกรอบข้อความแสดงบนแผนที่ (พร้อมแก้ไขลิงก์ Google Maps ให้ถูกต้องตามที่แนะนำรอบก่อนด้วยครับ)
         const popupContent = `
           <div class="p-1 max-w-[200px] font-sans">
             ${photoHtml}
             <div class="text-sm font-bold text-indigo-600 mb-0.5">${student.fullName}</div>
             <div class="text-xs text-gray-600 mb-1"><b>รหัส:</b> ${student.studentId} | <b>ชื่อเล่น:</b> ${student.nickname}</div>
             <div class="text-xs text-gray-700 mb-2"><b>หมู่บ้าน:</b> ${student.village || '-'}</div>
-            <a href="https://www.google.com/maps/dir/?api=1&destination=${student.lat},${student.lng}" target="_blank" 
+            <a href="https://www.google.com/maps/search/?api=1&query=${student.lat},${student.lng}" target="_blank" 
                class="block text-center bg-green-600 hover:bg-green-700 text-white font-medium text-xs py-1.5 px-3 rounded-md transition no-underline shadow-sm">
                🧭 นำทางด้วย Google Maps
             </a>
